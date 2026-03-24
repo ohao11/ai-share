@@ -37,6 +37,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Admin',
     component: () => import('@/views/admin/Dashboard.vue'),
     meta: { title: '管理后台', requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/oauth-callback',
+    name: 'OAuthCallback',
+    component: () => import('@/views/auth/OAuthCallback.vue'),
+    meta: { title: 'OAuth 登录' }
   }
 ]
 

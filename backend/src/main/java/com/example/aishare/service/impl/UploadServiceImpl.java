@@ -1,10 +1,13 @@
 package com.example.aishare.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.aishare.common.exception.BusinessException;
 import com.example.aishare.dto.request.PresignedUrlRequest;
 import com.example.aishare.dto.response.UploadResponse;
 import com.example.aishare.entity.File;
+import com.example.aishare.entity.User;
 import com.example.aishare.mapper.FileMapper;
+import com.example.aishare.mapper.UserMapper;
 import com.example.aishare.service.UploadService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
@@ -12,6 +15,7 @@ import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +32,7 @@ public class UploadServiceImpl implements UploadService {
 
     private final MinioClient minioClient;
     private final FileMapper fileMapper;
+    private final UserMapper userMapper;
 
     @Value("${minio.bucket:ai-share}")
     private String bucketName;
@@ -53,14 +58,23 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public UploadResponse confirmUpload(PresignedUrlRequest request, String objectName) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("username", username);
+        User user = userMapper.selectOne(queryWrapper);
+
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+
         File file = new File();
-        file.setUuid(UUID.randomUUID().toString());
+        file.setUuid(UUID.randomUUID());
         file.setFileName(request.getFileName());
         file.setFilePath(objectName);
         file.setBucket(bucketName);
         file.setFileSize(request.getFileSize());
         file.setMimeType(request.getMimeType());
-        file.setUploaderId(1L); // TODO: 从当前用户获取
+        file.setUploaderId(user.getId());
 
         fileMapper.insert(file);
 

@@ -6,7 +6,14 @@
         <div class="logo">AI Share</div>
         <nav class="main-nav">
           <router-link to="/">首页</router-link>
-          <a href="#" @click.prevent="showCategories = !showCategories">分类</a>
+          <div class="nav-dropdown">
+            <a href="#" @click.prevent="showCategories = !showCategories">分类 ▾</a>
+            <ul v-if="showCategories" class="dropdown-menu">
+              <li v-for="cat in categories" :key="cat.id">
+                <router-link :to="`/category/${cat.slug}`">{{ cat.name }}</router-link>
+              </li>
+            </ul>
+          </div>
           <router-link to="/admin" v-if="authStore.isAdmin">管理</router-link>
           <template v-if="authStore.isAuthenticated">
             <span class="user-name">{{ authStore.user?.username }}</span>
@@ -150,7 +157,7 @@ const loadArticles = async () => {
   try {
     const categoryId = route.params.slug ? undefined : undefined
     const res = await getArticlesApi(currentPage.value, pageSize.value, categoryId, keyword.value)
-    articles.value = res.data.records
+    articles.value = res.data.data
     total.value = res.data.total
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -226,9 +233,37 @@ onMounted(() => {
     a {
       color: #333;
       text-decoration: none;
+      cursor: pointer;
 
       &:hover {
         color: #409eff;
+      }
+    }
+
+    .nav-dropdown {
+      position: relative;
+
+      .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 0.5rem 0;
+        min-width: 120px;
+        z-index: 100;
+
+        li {
+          list-style: none;
+
+          a {
+            display: block;
+            padding: 0.5rem 1rem;
+            white-space: nowrap;
+          }
+        }
       }
     }
   }

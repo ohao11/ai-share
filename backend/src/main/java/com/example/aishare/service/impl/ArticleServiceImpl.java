@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 文章服务实现
@@ -116,7 +116,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         }
 
         article.setStatus(SystemConstants.ArticleStatus.PUBLISHED);
-        article.setPublishedAt(ZonedDateTime.now());
+        article.setPublishedAt(OffsetDateTime.now());
         updateById(article);
     }
 

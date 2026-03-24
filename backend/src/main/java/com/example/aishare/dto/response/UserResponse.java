@@ -2,7 +2,7 @@ package com.example.aishare.dto.response;
 
 import lombok.Data;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 用户信息响应
@@ -17,5 +17,5 @@ public class UserResponse {
     private String avatar;
     private Integer role;
     private String provider;
-    private ZonedDateTime createdAt;
+    private OffsetDateTime createdAt;
 }

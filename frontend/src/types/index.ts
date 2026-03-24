@@ -42,12 +42,14 @@ export interface Category {
   description?: string
   parentId?: number
   sortOrder: number
+  createdAt: string
 }
 
 export interface Tag {
   id: number
   name: string
   slug: string
+  createdAt: string
 }
 
 export interface Comment {
@@ -62,9 +64,12 @@ export interface Comment {
 }
 
 export interface PageResult<T> {
-  records: T[]
+  code: number
+  message: string
+  data: T[]
   total: number
   current: number
   size: number
   pages: number
+  timestamp: number
 }

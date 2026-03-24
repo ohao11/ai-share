@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 文章实体
@@ -81,17 +81,17 @@ public class Article implements Serializable {
     /**
      * 发布时间
      */
-    private ZonedDateTime publishedAt;
+    private OffsetDateTime publishedAt;
 
     /**
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
-    private ZonedDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     /**
      * 更新时间
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private ZonedDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 }

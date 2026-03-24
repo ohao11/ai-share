@@ -5,6 +5,7 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,18 +37,20 @@ public class MinioConfig {
      * 初始化 Bucket
      */
     @Bean
-    public void initBucket(MinioClient minioClient,
+    public CommandLineRunner initBucket(MinioClient minioClient,
                           @Value("${minio.bucket:ai-share}") String bucketName) {
-        try {
-            boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
-            if (!exists) {
-                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
-                log.info("创建 Bucket 成功：{}", bucketName);
-            } else {
-                log.info("Bucket 已存在：{}", bucketName);
+        return args -> {
+            try {
+                boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+                if (!exists) {
+                    minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                    log.info("创建 Bucket 成功：{}", bucketName);
+                } else {
+                    log.info("Bucket 已存在：{}", bucketName);
+                }
+            } catch (Exception e) {
+                log.error("初始化 Bucket 失败：{}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("初始化 Bucket 失败：{}", e.getMessage());
-        }
+        };
     }
 }

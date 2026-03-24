@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 标签实体
@@ -37,5 +37,5 @@ public class Tag implements Serializable {
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
-    private ZonedDateTime createdAt;
+    private OffsetDateTime createdAt;
 }

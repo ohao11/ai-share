@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 用户实体
@@ -26,7 +26,7 @@ public class User implements Serializable {
     /**
      * UUID
      */
-    private String uuid;
+    private java.util.UUID uuid;
 
     /**
      * 用户名
@@ -71,17 +71,17 @@ public class User implements Serializable {
     /**
      * 最后登录时间
      */
-    private ZonedDateTime lastLoginAt;
+    private OffsetDateTime lastLoginAt;
 
     /**
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
-    private ZonedDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     /**
      * 更新时间
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private ZonedDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 }

@@ -2,7 +2,7 @@ package com.example.aishare.dto.response;
 
 import lombok.Data;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 文章信息响应
@@ -24,7 +24,7 @@ public class ArticleResponse {
     private Integer viewCount;
     private Integer likeCount;
     private Integer commentCount;
-    private ZonedDateTime publishedAt;
-    private ZonedDateTime createdAt;
-    private ZonedDateTime updatedAt;
+    private OffsetDateTime publishedAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 }

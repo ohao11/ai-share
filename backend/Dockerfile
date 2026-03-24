@@ -1,24 +1,9 @@
 # ============================================
-# 构建阶段
-# ============================================
-FROM registry.cn-shanghai.aliyuncs.com/bountyteam/maven:3.9-eclipse-temurin-21 AS builder
-
-WORKDIR /app
-
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-COPY src ./src
-RUN mvn clean package -DskipTests -B
-
-# ============================================
-# 运行阶段
+# 运行阶段 - 直接使用宿主机打好的 jar 包
 # ============================================
 FROM registry.cn-shanghai.aliyuncs.com/bountyteam/eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
-
-COPY --from=builder /app/target/*.jar app.jar
 
 # 设置时区
 RUN apk add --no-cache tzdata && \
@@ -28,6 +13,9 @@ RUN apk add --no-cache tzdata && \
 # 创建非 root 用户
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
     chown -R appuser:appgroup /app
+
+# 复制宿主机构建好的 jar 包
+COPY target/*.jar app.jar
 
 USER appuser
 

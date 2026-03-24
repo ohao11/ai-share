@@ -103,7 +103,7 @@ const handleLogin = async () => {
 
 const handleOAuthLogin = (provider: string) => {
   // OAuth2 登录由后端处理，直接跳转到后端授权 URL
-  window.location.href = `http://localhost:8080/api/auth/${provider}`
+  window.location.href = `/oauth2/authorization/${provider}`
 }
 </script>
 

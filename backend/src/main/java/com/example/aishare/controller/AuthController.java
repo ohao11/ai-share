@@ -61,4 +61,13 @@ public class AuthController {
     public void githubCallback() {
         // OAuth2 成功登录后由 Spring Security 处理
     }
+
+    /**
+     * 用户登出
+     */
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        // 前端清除 token 即可，这里只返回成功
+        return Result.success();
+    }
 }

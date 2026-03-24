@@ -18,7 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 用户服务实现
@@ -50,7 +50,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 更新最后登录时间
-        user.setLastLoginAt(ZonedDateTime.now());
+        user.setLastLoginAt(OffsetDateTime.now());
         updateById(user);
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
@@ -112,7 +112,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             user.setAvatar(avatar);
             user.setProvider(provider);
             user.setProviderId(providerId);
-            user.setLastLoginAt(ZonedDateTime.now());
+            user.setLastLoginAt(OffsetDateTime.now());
             updateById(user);
         }
 
@@ -148,7 +148,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserResponse convertToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
-        response.setUuid(user.getUuid());
+        response.setUuid(user.getUuid() != null ? user.getUuid().toString() : null);
         response.setUsername(user.getUsername());
         response.setEmail(user.getEmail());
         response.setAvatar(user.getAvatar());

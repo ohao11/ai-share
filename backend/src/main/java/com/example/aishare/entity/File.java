@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 文件实体
@@ -26,7 +26,7 @@ public class File implements Serializable {
     /**
      * UUID
      */
-    private String uuid;
+    private java.util.UUID uuid;
 
     /**
      * 文件名
@@ -62,5 +62,5 @@ public class File implements Serializable {
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
-    private ZonedDateTime createdAt;
+    private OffsetDateTime createdAt;
 }

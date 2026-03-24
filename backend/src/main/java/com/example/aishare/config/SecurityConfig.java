@@ -1,6 +1,9 @@
 package com.example.aishare.config;
 
 import com.example.aishare.security.JwtAuthenticationFilter;
+import com.example.aishare.security.JwtTokenProvider;
+import com.example.aishare.security.OAuth2AuthenticationSuccessHandler;
+import com.example.aishare.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -31,6 +35,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
+    private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,6 +49,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 配置 CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // 配置 OAuth2 登录
+            .oauth2Client(oauth2 -> {})
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oauth2AuthenticationSuccessHandler)
+            )
             // 配置帧选项
             .headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
@@ -50,6 +62,7 @@ public class SecurityConfig {
                 // 公开接口
                 .requestMatchers(
                     "/api/auth/**",
+                    "/oauth2/**",
                     "/api/articles/**",
                     "/api/categories/**",
                     "/api/tags/**",

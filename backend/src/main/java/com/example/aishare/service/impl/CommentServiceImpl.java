@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -39,8 +39,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         comment.setParentId(parentId);
         comment.setStatus(SystemConstants.CommentStatus.APPROVED); // TODO: 根据配置是否需要审核
         comment.setUserId(1L); // TODO: 从当前用户获取
-        comment.setCreatedAt(ZonedDateTime.now());
-        comment.setUpdatedAt(ZonedDateTime.now());
+        comment.setCreatedAt(OffsetDateTime.now());
+        comment.setUpdatedAt(OffsetDateTime.now());
 
         save(comment);
 
