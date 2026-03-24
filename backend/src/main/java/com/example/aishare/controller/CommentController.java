@@ -1,0 +1,42 @@
+package com.example.aishare.controller;
+
+import com.example.aishare.common.result.Result;
+import com.example.aishare.entity.Comment;
+import com.example.aishare.service.CommentService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 评论控制器
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/articles/{articleId}/comments")
+@RequiredArgsConstructor
+public class CommentController {
+
+    private final CommentService commentService;
+
+    /**
+     * 获取文章评论列表
+     */
+    @GetMapping
+    public Result<List<Comment>> getComments(@PathVariable Long articleId) {
+        return Result.success(commentService.getCommentsByArticle(articleId));
+    }
+
+    /**
+     * 发表评论
+     */
+    @PostMapping
+    public Result<Comment> createComment(
+            @PathVariable Long articleId,
+            @RequestParam String content,
+            @RequestParam(required = false) Long parentId) {
+        Comment comment = commentService.createComment(articleId, content, parentId);
+        return Result.success(comment);
+    }
+}

@@ -1,0 +1,64 @@
+package com.example.aishare.controller;
+
+import com.example.aishare.common.result.Result;
+import com.example.aishare.dto.request.LoginRequest;
+import com.example.aishare.dto.request.RegisterRequest;
+import com.example.aishare.dto.response.LoginResponse;
+import com.example.aishare.dto.response.UserResponse;
+import com.example.aishare.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * 认证控制器
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final UserService userService;
+
+    /**
+     * 用户登录
+     */
+    @PostMapping("/login")
+    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return Result.success(userService.login(request));
+    }
+
+    /**
+     * 用户注册
+     */
+    @PostMapping("/register")
+    public Result<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return Result.success(userService.register(request));
+    }
+
+    /**
+     * 获取当前用户信息
+     */
+    @GetMapping("/me")
+    public Result<UserResponse> getCurrentUser() {
+        return Result.success(userService.getCurrentUser());
+    }
+
+    /**
+     * Google OAuth2 回调
+     */
+    @GetMapping("/google/callback")
+    public void googleCallback() {
+        // OAuth2 成功登录后由 Spring Security 处理
+    }
+
+    /**
+     * GitHub OAuth2 回调
+     */
+    @GetMapping("/github/callback")
+    public void githubCallback() {
+        // OAuth2 成功登录后由 Spring Security 处理
+    }
+}
