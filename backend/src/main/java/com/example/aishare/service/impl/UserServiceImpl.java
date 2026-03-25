@@ -1,5 +1,6 @@
 package com.example.aishare.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.aishare.common.constants.SystemConstants;
 import com.example.aishare.common.exception.BusinessException;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 用户服务实现
@@ -156,5 +159,73 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         response.setProvider(user.getProvider());
         response.setCreatedAt(user.getCreatedAt());
         return response;
+    }
+
+    @Override
+    public Page<UserResponse> getUsers(Integer page, Integer size, String keyword) {
+        Page<User> userPage = new Page<>(page, size);
+
+        Page<User> result = lambdaQuery()
+                .like(keyword != null && !keyword.isBlank(), User::getUsername, keyword)
+                .or()
+                .like(keyword != null && !keyword.isBlank(), User::getEmail, keyword)
+                .orderByDesc(User::getCreatedAt)
+                .page(userPage);
+
+        Page<UserResponse> responsePage = new Page<>(page, size);
+        responsePage.setTotal(result.getTotal());
+        responsePage.setRecords(result.getRecords().stream()
+                .map(this::convertToUserResponse)
+                .toList());
+
+        return responsePage;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserRole(Long id, Integer role) {
+        User user = getById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        user.setRole(role);
+        updateById(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserStatus(Long id, Integer status) {
+        User user = getById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        user.setStatus(status);
+        updateById(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUser(Long id) {
+        User user = getById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        removeById(id);
+    }
+
+    @Override
+    public Map<String, Object> getStats() {
+        Map<String, Object> stats = new HashMap<>();
+
+        // 用户统计
+        Long totalUsers = lambdaQuery().count();
+        Long activeUsers = lambdaQuery().eq(User::getStatus, SystemConstants.Status.NORMAL).count();
+
+        stats.put("totalUsers", totalUsers);
+        stats.put("activeUsers", activeUsers);
+
+        // 这里可以扩展更多统计（文章数、评论数等）
+
+        return stats;
     }
 }

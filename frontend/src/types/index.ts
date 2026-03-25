@@ -22,17 +22,17 @@ export interface Article {
   summary?: string
   content: string
   coverImage?: string
-  authorId: number
+  authorId?: number
   authorName?: string
   categoryId?: number
   categoryName?: string
   status: number
-  viewCount: number
-  likeCount: number
-  commentCount: number
+  viewCount?: number
+  likeCount?: number
+  commentCount?: number
   publishedAt?: string
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Category {
@@ -72,4 +72,12 @@ export interface PageResult<T> {
   size: number
   pages: number
   timestamp: number
+}
+
+export interface UploadResponse {
+  id: number
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
 }

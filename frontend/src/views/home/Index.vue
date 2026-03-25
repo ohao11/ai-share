@@ -16,7 +16,13 @@
           </div>
           <router-link to="/admin" v-if="authStore.isAdmin">管理</router-link>
           <template v-if="authStore.isAuthenticated">
-            <span class="user-name">{{ authStore.user?.username }}</span>
+            <router-link to="/article/create" class="create-btn">
+              <el-icon><Plus /></el-icon>
+              写文章
+            </router-link>
+            <router-link to="/user">
+              <span class="user-name">{{ authStore.user?.username }}</span>
+            </router-link>
             <a href="#" @click.prevent="handleLogout">退出</a>
           </template>
           <template v-else>
@@ -71,7 +77,7 @@
                       <el-icon><ChatDotRound /></el-icon>
                       {{ article.commentCount }}
                     </span>
-                    <span class="meta-item time">{{ formatDate(article.createdAt) }}</span>
+                    <span class="meta-item time">{{ formatDate(article.createdAt || '') }}</span>
                   </div>
                 </router-link>
               </div>
@@ -157,8 +163,8 @@ const loadArticles = async () => {
   try {
     const categoryId = route.params.slug ? undefined : undefined
     const res = await getArticlesApi(currentPage.value, pageSize.value, categoryId, keyword.value)
-    articles.value = res.data.data
-    total.value = res.data.total
+    articles.value = res.data
+    total.value = res.total
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {
@@ -237,6 +243,22 @@ onMounted(() => {
 
       &:hover {
         color: #409eff;
+      }
+    }
+
+    .create-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #409eff;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background 0.3s;
+
+      &:hover {
+        background: #66b1ff;
+        color: #fff;
       }
     }
 

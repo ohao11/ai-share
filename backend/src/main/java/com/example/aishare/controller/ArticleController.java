@@ -5,11 +5,15 @@ import com.example.aishare.common.result.PageResult;
 import com.example.aishare.common.result.Result;
 import com.example.aishare.dto.request.ArticleCreateRequest;
 import com.example.aishare.dto.response.ArticleResponse;
+import com.example.aishare.dto.response.UserResponse;
 import com.example.aishare.service.ArticleService;
+import com.example.aishare.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 文章控制器
@@ -21,18 +25,19 @@ import org.springframework.web.bind.annotation.*;
 public class ArticleController {
 
     private final ArticleService articleService;
+    private final UserService userService;
 
     /**
      * 获取文章列表
      */
     @GetMapping
-    public Result<PageResult<Page<ArticleResponse>>> getArticles(
+    public PageResult<ArticleResponse> getArticles(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword) {
         Page<ArticleResponse> result = articleService.getArticles(page, size, categoryId, keyword);
-        return Result.success(PageResult.of(result, result.getTotal(), result.getCurrent(), result.getSize()));
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     /**
@@ -83,8 +88,19 @@ public class ArticleController {
      * 点赞文章
      */
     @PostMapping("/{id}/like")
-    public Result<Void> likeArticle(@PathVariable Long id) {
-        articleService.likeArticle(id);
-        return Result.success();
+    public Result<Map<String, Boolean>> likeArticle(@PathVariable Long id) {
+        UserResponse user = userService.getCurrentUser();
+        boolean liked = articleService.likeArticle(id, user.getId());
+        return Result.success(Map.of("liked", liked));
+    }
+
+    /**
+     * 检查是否点赞
+     */
+    @GetMapping("/{id}/liked")
+    public Result<Map<String, Boolean>> isLiked(@PathVariable Long id) {
+        UserResponse user = userService.getCurrentUser();
+        boolean liked = articleService.isLiked(id, user.getId());
+        return Result.success(Map.of("liked", liked));
     }
 }

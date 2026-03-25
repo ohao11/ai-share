@@ -18,7 +18,7 @@
 
           <div class="article-meta">
             <span class="meta-item">作者：{{ article.authorName || '未知' }}</span>
-            <span class="meta-item">发布于：{{ formatDate(article.createdAt) }}</span>
+            <span class="meta-item">发布于：{{ formatDate(article.createdAt || '') }}</span>
             <span class="meta-item">浏览：{{ article.viewCount }}</span>
             <span class="meta-item">点赞：{{ article.likeCount }}</span>
           </div>
@@ -28,9 +28,9 @@
           </div>
 
           <div class="article-actions">
-            <el-button type="primary" @click="handleLike">
+            <el-button :type="isLiked ? 'danger' : 'primary'" @click="handleLike">
               <el-icon><Star /></el-icon>
-              点赞 ({{ article.likeCount }})
+              {{ isLiked ? '已点赞' : '点赞' }} ({{ article.likeCount }})
             </el-button>
           </div>
         </article>
@@ -70,16 +70,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getArticleApi, likeArticleApi, getCommentsApi, createCommentApi } from '@/api'
+import { getArticleApi, likeArticleApi, checkLikedApi, getCommentsApi, createCommentApi } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
 import type { Article, Comment } from '@/types'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const loading = ref(false)
 const posting = ref(false)
 const article = ref<Article | null>(null)
 const comments = ref<Comment[]>([])
 const commentContent = ref('')
+const isLiked = ref(false)
 
 const loadArticle = async () => {
   loading.value = true
@@ -93,6 +96,16 @@ const loadArticle = async () => {
   }
 }
 
+const loadLikedStatus = async () => {
+  if (!authStore.isAuthenticated) return
+  try {
+    const res = await checkLikedApi(Number(route.params.id))
+    isLiked.value = res.data.liked
+  } catch (error) {
+    console.error('检查点赞状态失败:', error)
+  }
+}
+
 const loadComments = async () => {
   try {
     const res = await getCommentsApi(Number(route.params.id))
@@ -103,10 +116,14 @@ const loadComments = async () => {
 }
 
 const handleLike = async () => {
+  if (!authStore.isAuthenticated) {
+    return
+  }
   try {
-    await likeArticleApi(Number(route.params.id))
+    const res = await likeArticleApi(Number(route.params.id))
+    isLiked.value = res.data.liked
     if (article.value) {
-      article.value.likeCount++
+      article.value.likeCount = (article.value.likeCount || 0) + (isLiked.value ? 1 : -1)
     }
   } catch (error) {
     console.error('点赞失败:', error)
@@ -130,6 +147,7 @@ const handlePostComment = async () => {
 
 onMounted(() => {
   loadArticle()
+  loadLikedStatus()
   loadComments()
 })
 </script>

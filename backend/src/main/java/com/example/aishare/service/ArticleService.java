@@ -12,7 +12,7 @@ import com.example.aishare.entity.Article;
 public interface ArticleService extends IService<Article> {
 
     /**
-     * 分页获取文章列表
+     * 分页获取文章列表（仅已发布）
      */
     Page<ArticleResponse> getArticles(Integer page, Integer size, Long categoryId, String keyword);
 
@@ -42,12 +42,28 @@ public interface ArticleService extends IService<Article> {
     void publishArticle(Long id);
 
     /**
+     * 下架文章
+     */
+    void removeArticle(Long id);
+
+    /**
+     * 获取所有文章（管理员，包含草稿）
+     */
+    Page<ArticleResponse> getAllArticles(Integer page, Integer size, Long categoryId, String keyword, Integer status);
+
+    /**
      * 增加阅读量
      */
     void incrementViewCount(Long id);
 
     /**
      * 点赞文章
+     * @return true 表示点赞成功，false 表示取消点赞
      */
-    void likeArticle(Long id);
+    boolean likeArticle(Long articleId, Long userId);
+
+    /**
+     * 检查用户是否已点赞
+     */
+    boolean isLiked(Long articleId, Long userId);
 }

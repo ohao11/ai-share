@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import type { PageResult } from '@/types'
 
 // 声明 Vite 环境变量
 declare global {
@@ -54,8 +55,9 @@ request.interceptors.request.use(
  * 响应拦截器
  */
 request.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse<unknown>>) => {
-    const { code, message } = response.data
+  (response: AxiosResponse<unknown>) => {
+    const data = response.data as { code: number; message: string }
+    const { code, message } = data
 
     if (code === 200) {
       return response
@@ -90,6 +92,13 @@ request.interceptors.response.use(
  */
 export function get<T>(url: string, params?: Record<string, unknown>): Promise<ApiResponse<T>> {
   return request.get(url, { params }).then(res => res.data as ApiResponse<T>)
+}
+
+/**
+ * 分页请求方法
+ */
+export function getPage<T>(url: string, params?: Record<string, unknown>): Promise<PageResult<T>> {
+  return request.get(url, { params }).then(res => res.data as PageResult<T>)
 }
 
 export function post<T>(url: string, data?: unknown): Promise<ApiResponse<T>> {
