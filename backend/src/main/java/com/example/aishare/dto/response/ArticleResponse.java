@@ -3,6 +3,7 @@ package com.example.aishare.dto.response;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * 文章信息响应
@@ -27,4 +28,9 @@ public class ArticleResponse {
     private OffsetDateTime publishedAt;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+
+    /**
+     * 文章标签列表
+     */
+    private List<TagResponse> tags;
 }

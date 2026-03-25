@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 创建/更新文章请求
  */
@@ -27,4 +29,9 @@ public class ArticleCreateRequest {
     private Long categoryId;
 
     private Integer status;
+
+    /**
+     * 标签ID列表
+     */
+    private List<Long> tagIds;
 }

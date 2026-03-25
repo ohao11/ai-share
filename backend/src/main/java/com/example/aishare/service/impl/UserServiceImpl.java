@@ -1,5 +1,6 @@
 package com.example.aishare.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.aishare.common.constants.SystemConstants;
@@ -8,7 +9,11 @@ import com.example.aishare.dto.request.LoginRequest;
 import com.example.aishare.dto.request.RegisterRequest;
 import com.example.aishare.dto.response.LoginResponse;
 import com.example.aishare.dto.response.UserResponse;
+import com.example.aishare.entity.Article;
+import com.example.aishare.entity.Comment;
 import com.example.aishare.entity.User;
+import com.example.aishare.mapper.ArticleMapper;
+import com.example.aishare.mapper.CommentMapper;
 import com.example.aishare.mapper.UserMapper;
 import com.example.aishare.security.JwtTokenProvider;
 import com.example.aishare.service.UserService;
@@ -33,6 +38,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ArticleMapper articleMapper;
+    private final CommentMapper commentMapper;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -224,7 +231,35 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         stats.put("totalUsers", totalUsers);
         stats.put("activeUsers", activeUsers);
 
-        // 这里可以扩展更多统计（文章数、评论数等）
+        // 文章统计
+        LambdaQueryWrapper<Article> articleQuery = new LambdaQueryWrapper<>();
+        Long totalArticles = articleMapper.selectCount(articleQuery);
+
+        LambdaQueryWrapper<Article> publishedQuery = new LambdaQueryWrapper<>();
+        publishedQuery.eq(Article::getStatus, SystemConstants.ArticleStatus.PUBLISHED);
+        Long publishedArticles = articleMapper.selectCount(publishedQuery);
+
+        LambdaQueryWrapper<Article> draftQuery = new LambdaQueryWrapper<>();
+        draftQuery.eq(Article::getStatus, SystemConstants.ArticleStatus.DRAFT);
+        Long draftArticles = articleMapper.selectCount(draftQuery);
+
+        stats.put("totalArticles", totalArticles);
+        stats.put("publishedArticles", publishedArticles);
+        stats.put("draftArticles", draftArticles);
+
+        // 评论统计
+        LambdaQueryWrapper<Comment> commentQuery = new LambdaQueryWrapper<>();
+        Long totalComments = commentMapper.selectCount(commentQuery);
+
+        stats.put("totalComments", totalComments);
+
+        // 浏览量和点赞量统计
+        // 使用 SQL 聚合查询
+        Long totalViews = articleMapper.selectSumViewCount();
+        Long totalLikes = articleMapper.selectSumLikeCount();
+
+        stats.put("totalViews", totalViews != null ? totalViews : 0);
+        stats.put("totalLikes", totalLikes != null ? totalLikes : 0);
 
         return stats;
     }

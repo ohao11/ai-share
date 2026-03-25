@@ -120,7 +120,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { getArticlesApi, deleteArticleApi } from '@/api'
+import { getArticlesByAuthorApi, deleteArticleApi } from '@/api'
 import { formatDate } from '@/utils/format'
 import type { Article } from '@/types'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -143,10 +143,8 @@ const loadMyArticles = async () => {
 
   articlesLoading.value = true
   try {
-    // TODO: 后端需要支持按作者 ID 查询
-    const res = await getArticlesApi(1, 50)
-    // 前端过滤出自己的文章
-    myArticles.value = res.data.filter((a: any) => a.authorId === authStore.user?.id)
+    const res = await getArticlesByAuthorApi(authStore.user.id, 1, 50)
+    myArticles.value = res.data
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {

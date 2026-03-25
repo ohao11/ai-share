@@ -11,6 +11,7 @@ import com.example.aishare.mapper.UserMapper;
 import com.example.aishare.service.UploadService;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,20 @@ public class UploadServiceImpl implements UploadService {
             throw new BusinessException("文件不存在");
         }
 
-        // TODO: 从 MinIO 删除对象
+        // 从 MinIO 删除对象
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(file.getBucket() != null ? file.getBucket() : bucketName)
+                            .object(file.getFilePath())
+                            .build());
+            log.info("从 MinIO 删除文件: {}", file.getFilePath());
+        } catch (Exception e) {
+            log.error("从 MinIO 删除文件失败：{}", e.getMessage());
+            // 继续删除数据库记录，即使 MinIO 删除失败
+        }
+
+        // 删除数据库记录
         fileMapper.deleteById(fileId);
     }
 

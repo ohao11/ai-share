@@ -103,4 +103,16 @@ public class ArticleController {
         boolean liked = articleService.isLiked(id, user.getId());
         return Result.success(Map.of("liked", liked));
     }
+
+    /**
+     * 按作者查询文章
+     */
+    @GetMapping("/author/{authorId}")
+    public PageResult<ArticleResponse> getArticlesByAuthor(
+            @PathVariable Long authorId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<ArticleResponse> result = articleService.getArticlesByAuthor(page, size, authorId);
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+    }
 }

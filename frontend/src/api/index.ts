@@ -27,6 +27,10 @@ export function getArticlesApi(page: number, size: number, categoryId?: number, 
   return getPage<Article>('/articles', { page, size, categoryId, keyword })
 }
 
+export function getArticlesByAuthorApi(authorId: number, page: number, size: number) {
+  return getPage<Article>(`/articles/author/${authorId}`, { page, size })
+}
+
 export function getArticleApi(id: number) {
   return get<Article>(`/articles/${id}`)
 }
@@ -101,4 +105,31 @@ export function confirmUploadApi(fileName: string, fileSize: number, mimeType: s
 
 export function deleteFileApi(fileId: number) {
   return del(`/upload/${fileId}`)
+}
+
+/**
+ * 管理后台相关 API
+ */
+export function getStatsApi() {
+  return get<Record<string, unknown>>('/admin/stats')
+}
+
+export function getAdminUsersApi(page: number, size: number, keyword?: string) {
+  return getPage<User>('/admin/users', { page, size, keyword })
+}
+
+export function updateUserStatusApi(userId: number, status: number) {
+  return put<void>(`/admin/users/${userId}/status?status=${status}`)
+}
+
+export function deleteUserApi(userId: number) {
+  return del(`/admin/users/${userId}`)
+}
+
+export function getAdminArticlesApi(page: number, size: number, categoryId?: number, keyword?: string, status?: number) {
+  return getPage<Article>('/admin/articles', { page, size, categoryId, keyword, status })
+}
+
+export function removeArticleApi(id: number) {
+  return post(`/admin/articles/${id}/remove`)
 }

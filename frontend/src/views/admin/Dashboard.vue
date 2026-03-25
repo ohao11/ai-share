@@ -111,8 +111,7 @@
                   <el-button @click="loadArticles"><el-icon><Search /></el-icon></el-button>
                 </template>
               </el-input>
-              <el-select v-model="articleStatus" placeholder="状态" style="width: 120px" @change="loadArticles">
-                <el-option label="全部" :value="null" />
+              <el-select v-model="articleStatus" placeholder="状态" style="width: 120px" clearable @change="loadArticles">
                 <el-option label="草稿" :value="0" />
                 <el-option label="已发布" :value="1" />
                 <el-option label="已下架" :value="2" />
@@ -228,9 +227,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import {
+  getStatsApi,
+  getAdminArticlesApi,
+  deleteArticleApi,
+  getAdminUsersApi,
+  updateUserStatusApi,
+  deleteUserApi
+} from '@/api'
+import type { Article, User } from '@/types'
 
 const authStore = useAuthStore()
 
@@ -250,21 +258,25 @@ const stats = reactive({
   totalUsers: 0,
   totalArticles: 0,
   totalViews: 0,
-  totalComments: 0
+  totalComments: 0,
+  activeUsers: 0,
+  publishedArticles: 0,
+  draftArticles: 0,
+  totalLikes: 0
 })
 
 // 文章管理
 const articlesLoading = ref(false)
-const articles = ref<any[]>([])
+const articles = ref<Article[]>([])
 const articlePage = ref(1)
 const articlePageSize = ref(10)
 const articleTotal = ref(0)
 const articleKeyword = ref('')
-const articleStatus = ref<number | null>(null)
+const articleStatus = ref<number | undefined>(undefined)
 
 // 用户管理
 const usersLoading = ref(false)
-const users = ref<any[]>([])
+const users = ref<User[]>([])
 const userPage = ref(1)
 const userPageSize = ref(10)
 const userTotal = ref(0)
@@ -272,13 +284,17 @@ const userKeyword = ref('')
 
 const handleMenuSelect = (index: string) => {
   activeMenu.value = index
+  if (index === 'articles') {
+    loadArticles()
+  } else if (index === 'users') {
+    loadUsers()
+  }
 }
 
 const loadStats = async () => {
   try {
-    // TODO: 调用后端统计 API
-    // const res = await getStatsApi()
-    // Object.assign(stats, res.data)
+    const res = await getStatsApi()
+    Object.assign(stats, res.data)
   } catch (error) {
     console.error('加载统计失败:', error)
   }
@@ -287,10 +303,15 @@ const loadStats = async () => {
 const loadArticles = async () => {
   articlesLoading.value = true
   try {
-    // TODO: 调用后端管理文章列表 API
-    // const res = await getAdminArticlesApi(articlePage.value, articlePageSize.value, articleKeyword.value, articleStatus.value)
-    // articles.value = res.data.data
-    // articleTotal.value = res.data.total
+    const res = await getAdminArticlesApi(
+      articlePage.value,
+      articlePageSize.value,
+      undefined,
+      articleKeyword.value,
+      articleStatus.value
+    )
+    articles.value = res.data
+    articleTotal.value = res.total
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {
@@ -301,10 +322,9 @@ const loadArticles = async () => {
 const loadUsers = async () => {
   usersLoading.value = true
   try {
-    // TODO: 调用后端用户列表 API
-    // const res = await getAdminUsersApi(userPage.value, userPageSize.value, userKeyword.value)
-    // users.value = res.data.data
-    // userTotal.value = res.data.total
+    const res = await getAdminUsersApi(userPage.value, userPageSize.value, userKeyword.value)
+    users.value = res.data
+    userTotal.value = res.total
   } catch (error) {
     console.error('加载用户失败:', error)
   } finally {
@@ -312,19 +332,18 @@ const loadUsers = async () => {
   }
 }
 
-const handleEditArticle = (_articleId: number) => {
-  window.open(`/article/${_articleId}/edit`, '_blank')
+const handleEditArticle = (articleId: number) => {
+  window.open(`/article/${articleId}/edit`, '_blank')
 }
 
-const handleDeleteArticle = async (_articleId: number) => {
+const handleDeleteArticle = async (articleId: number) => {
   try {
     await ElMessageBox.confirm('确定要删除这篇文章吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    // TODO: 调用删除 API
-    // await deleteArticleApi(articleId)
+    await deleteArticleApi(articleId)
     ElMessage.success('删除成功')
     loadArticles()
   } catch (error: any) {
@@ -334,7 +353,7 @@ const handleDeleteArticle = async (_articleId: number) => {
   }
 }
 
-const handleToggleUserStatus = async (user: any) => {
+const handleToggleUserStatus = async (user: User) => {
   try {
     const newStatus = user.status === 1 ? 0 : 1
     await ElMessageBox.confirm(`确定要${newStatus === 1 ? '启用' : '禁用'}该用户吗？`, '提示', {
@@ -342,8 +361,7 @@ const handleToggleUserStatus = async (user: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    // TODO: 调用更新用户状态 API
-    // await updateUserStatusApi(user.id, newStatus)
+    await updateUserStatusApi(user.id, newStatus)
     ElMessage.success('操作成功')
     user.status = newStatus
   } catch (error: any) {
@@ -353,15 +371,14 @@ const handleToggleUserStatus = async (user: any) => {
   }
 }
 
-const handleDeleteUser = async (_userId: number) => {
+const handleDeleteUser = async (userId: number) => {
   try {
     await ElMessageBox.confirm('确定要删除该用户吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    // TODO: 调用删除用户 API
-    // await deleteUserApi(userId)
+    await deleteUserApi(userId)
     ElMessage.success('删除成功')
     loadUsers()
   } catch (error: any) {
@@ -370,6 +387,13 @@ const handleDeleteUser = async (_userId: number) => {
     }
   }
 }
+
+// 监听菜单变化加载数据
+watch(activeMenu, (newMenu) => {
+  if (newMenu === 'dashboard') {
+    loadStats()
+  }
+})
 
 onMounted(() => {
   loadStats()

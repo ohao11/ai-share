@@ -66,4 +66,9 @@ public interface ArticleService extends IService<Article> {
      * 检查用户是否已点赞
      */
     boolean isLiked(Long articleId, Long userId);
+
+    /**
+     * 按作者ID查询文章
+     */
+    Page<ArticleResponse> getArticlesByAuthor(Integer page, Integer size, Long authorId);
 }

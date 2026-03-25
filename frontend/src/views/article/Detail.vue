@@ -23,9 +23,7 @@
             <span class="meta-item">点赞：{{ article.likeCount }}</span>
           </div>
 
-          <div class="article-body">
-            {{ article.content }}
-          </div>
+          <div class="article-body" v-html="renderedContent"></div>
 
           <div class="article-actions">
             <el-button :type="isLiked ? 'danger' : 'primary'" @click="handleLike">
@@ -68,12 +66,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getArticleApi, likeArticleApi, checkLikedApi, getCommentsApi, createCommentApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
 import type { Article, Comment } from '@/types'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+
+// 配置 marked (v12 使用 renderer 方式处理代码高亮)
+const renderer = new marked.Renderer()
+renderer.code = function(code: string, infostring: string | undefined, _escaped: boolean): string {
+  const lang = infostring || ''
+  const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+  const highlighted = hljs.highlight(code, { language }).value
+  return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`
+}
+marked.use({ renderer, breaks: true, gfm: true })
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -83,6 +93,13 @@ const article = ref<Article | null>(null)
 const comments = ref<Comment[]>([])
 const commentContent = ref('')
 const isLiked = ref(false)
+
+const renderedContent = computed(() => {
+  if (article.value?.content) {
+    return marked.parse(article.value.content)
+  }
+  return ''
+})
 
 const loadArticle = async () => {
   loading.value = true
@@ -218,6 +235,86 @@ onMounted(() => {
     font-size: 1.1rem;
     line-height: 1.8;
     color: #333;
+
+    :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    :deep(p) {
+      margin-bottom: 1rem;
+    }
+
+    :deep(pre) {
+      background: #f6f8fa;
+      border-radius: 6px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+
+    :deep(code) {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.9em;
+    }
+
+    :deep(pre code) {
+      background: transparent;
+      padding: 0;
+    }
+
+    :deep(p code) {
+      background: #f6f8fa;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+    }
+
+    :deep(ul), :deep(ol) {
+      padding-left: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    :deep(li) {
+      margin-bottom: 0.5rem;
+    }
+
+    :deep(blockquote) {
+      border-left: 4px solid #dfe2e5;
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: #6a737d;
+    }
+
+    :deep(img) {
+      max-width: 100%;
+      height: auto;
+    }
+
+    :deep(a) {
+      color: #409eff;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    :deep(table) {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+
+      th, td {
+        border: 1px solid #dfe2e5;
+        padding: 0.5rem 0.75rem;
+      }
+
+      th {
+        background: #f6f8fa;
+        font-weight: 600;
+      }
+    }
   }
 
   .article-actions {
