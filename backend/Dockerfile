@@ -1,6 +1,4 @@
-# ============================================
-# 运行阶段 - 直接使用宿主机打好的 jar 包
-# ============================================
+# 使用 JRE 运行环境
 FROM registry.cn-shanghai.aliyuncs.com/bountyteam/eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
@@ -14,7 +12,7 @@ RUN apk add --no-cache tzdata && \
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
     chown -R appuser:appgroup /app
 
-# 复制宿主机构建好的 jar 包
+# 复制宿主机构建的 jar 包
 COPY target/*.jar app.jar
 
 USER appuser

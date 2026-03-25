@@ -27,10 +27,36 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '文章详情' }
   },
   {
+    path: '/article/create',
+    name: 'ArticleCreate',
+    component: () => import('@/views/article/Editor.vue'),
+    meta: { title: '创建文章', requiresAuth: true }
+  },
+  {
+    path: '/article/:id/edit',
+    name: 'ArticleEdit',
+    component: () => import('@/views/article/Editor.vue'),
+    meta: { title: '编辑文章', requiresAuth: true }
+  },
+  {
     path: '/category/:slug',
     name: 'Category',
     component: () => import('@/views/home/Index.vue'),
     meta: { title: '分类' }
+  },
+  {
+    path: '/user',
+    name: 'UserCenter',
+    component: () => import('@/views/user/Center.vue'),
+    meta: { title: '个人中心', requiresAuth: true },
+    children: [
+      {
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/user/Center.vue'),
+        meta: { title: '个人资料' }
+      }
+    ]
   },
   {
     path: '/admin',
@@ -54,6 +80,8 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('access_token')
+  const userInfo = localStorage.getItem('user_info')
+  const userRole = userInfo ? JSON.parse(userInfo).role : null
   const requiresAuth = to.meta.requiresAuth as boolean
   const requiresAdmin = to.meta.requiresAdmin as boolean
   const guestOnly = to.meta.guestOnly as boolean
@@ -66,7 +94,14 @@ router.beforeEach((to, _from, next) => {
 
   // 需要管理员权限的页面
   if (requiresAdmin) {
-    // TODO: 检查用户角色
+    if (!token) {
+      next({ name: 'Login' })
+      return
+    }
+    if (userRole !== 3) {
+      next({ name: 'Home' })
+      return
+    }
     next()
     return
   }

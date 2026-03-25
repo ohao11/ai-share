@@ -38,8 +38,11 @@ cd ai-share
 
 ### 2. 配置环境变量
 ```bash
+# 复制环境变量模板
 cp .env.example .env
+
 # 编辑 .env 文件，填入你的配置
+# 必须配置: JWT_SECRET, Google/GitHub OAuth2 凭证
 ```
 
 ### 3. 启动服务
@@ -59,6 +62,19 @@ docker-compose down
 - 后端 API：http://localhost:8080
 - MinIO 控制台：http://localhost:9001 (账号：minioadmin, 密码：minioadmin123)
 
+### 5. 环境变量说明
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `JWT_SECRET` | JWT 签名密钥 | 必须自定义 |
+| `JWT_EXPIRATION` | JWT 有效期 (ms) | 7200000 |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 客户端 ID | - |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 密钥 | - |
+| `GITHUB_CLIENT_ID` | GitHub OAuth2 客户端 ID | - |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth2 密钥 | - |
+| `MINIO_ACCESS_KEY` | MinIO 访问密钥 | minioadmin |
+| `MINIO_SECRET_KEY` | MinIO 密钥 | minioadmin123 |
+
 ## 项目结构
 
 ```
@@ -75,6 +91,7 @@ ai-share/
 │   └── package.json
 ├── docs/                 # 文档
 ├── docker-compose.yml    # Docker 编排
+├── .env                  # 环境变量配置
 └── .env.example          # 环境变量模板
 ```
 

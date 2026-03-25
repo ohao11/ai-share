@@ -8,13 +8,15 @@ WORKDIR /app
 # 设置 npm 镜像
 RUN npm config set registry https://registry.npmmirror.com
 
-# 复制 package 文件并安装依赖
+# 复制 package 文件并安装依赖（使用缓存挂载）
 COPY package*.json ./
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 # 复制源代码并构建
 COPY . .
-RUN npm run build
+RUN --mount=type=cache,target=/root/.npm \
+    npm run build
 
 # ============================================
 # 生产阶段

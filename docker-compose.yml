@@ -90,26 +90,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      cache_from:
+        - ai-share-backend-cache
     container_name: ai-share-backend
+    env_file:
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE: docker
       TZ: Asia/Shanghai
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ai_share
-      DB_USER: ai_share
-      DB_PASSWORD: ai_share_password
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin123
-      MINIO_BUCKET: ai-share
-      JWT_SECRET: ${JWT_SECRET:-default-secret-key-change-in-production}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
     ports:
       - "8080:8080"
     depends_on:
@@ -128,6 +116,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      cache_from:
+        - ai-share-frontend-cache
     container_name: ai-share-frontend
     environment:
       TZ: Asia/Shanghai

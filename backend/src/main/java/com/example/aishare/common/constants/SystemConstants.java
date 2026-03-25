@@ -31,7 +31,7 @@ public final class SystemConstants {
     public static final class ArticleStatus {
         public static final int DRAFT = 0;
         public static final int PUBLISHED = 1;
-        public static final int ARCHIVED = 2;
+        public static final int REMOVED = 2;
     }
 
     /**
