@@ -55,6 +55,10 @@ export function likeArticleApi(id: number) {
   return post<{ liked: boolean }>(`/articles/${id}/like`)
 }
 
+export function unlikeArticleApi(id: number) {
+  return del(`/articles/${id}/like`)
+}
+
 export function checkLikedApi(id: number) {
   return get<{ liked: boolean }>(`/articles/${id}/liked`)
 }
@@ -70,6 +74,18 @@ export function getCategoryBySlugApi(slug: string) {
   return get<Category>(`/categories/${slug}`)
 }
 
+export function createCategoryApi(data: Partial<Category>) {
+  return post<Category>('/categories', data)
+}
+
+export function updateCategoryApi(id: number, data: Partial<Category>) {
+  return put<Category>(`/categories/${id}`, data)
+}
+
+export function deleteCategoryApi(id: number) {
+  return del(`/categories/${id}`)
+}
+
 /**
  * 标签相关 API
  */
@@ -81,6 +97,10 @@ export function getHotTagsApi(limit: number) {
   return get<Tag[]>('/tags/hot', { limit })
 }
 
+export function createTagApi(data: Partial<Tag>) {
+  return post<Tag>('/tags', data)
+}
+
 /**
  * 评论相关 API
  */
@@ -90,6 +110,10 @@ export function getCommentsApi(articleId: number) {
 
 export function createCommentApi(articleId: number, content: string, parentId?: number) {
   return post<Comment>(`/articles/${articleId}/comments`, { content, parentId })
+}
+
+export function deleteCommentApi(articleId: number, commentId: number) {
+  return del(`/articles/${articleId}/comments/${commentId}`)
 }
 
 /**

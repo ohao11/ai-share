@@ -2,7 +2,10 @@ package com.example.aishare.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.aishare.common.constants.SystemConstants;
+import com.example.aishare.common.exception.BusinessException;
+import com.example.aishare.entity.Article;
 import com.example.aishare.entity.Comment;
+import com.example.aishare.mapper.ArticleMapper;
 import com.example.aishare.mapper.CommentMapper;
 import com.example.aishare.service.CommentService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
+
+    private final ArticleMapper articleMapper;
 
     @Override
     public List<Comment> getCommentsByArticle(Long articleId) {
@@ -45,8 +50,31 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         save(comment);
 
         // 更新文章评论数
-        // TODO: 使用原子操作更新 article 表的 comment_count
+        articleMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Article>()
+                        .eq(Article::getId, articleId)
+                        .setSql("comment_count = comment_count + 1"));
 
         return comment;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteComment(Long id) {
+        Comment comment = getById(id);
+        if (comment == null) {
+            throw new BusinessException("评论不存在");
+        }
+
+        // 删除评论
+        removeById(id);
+
+        // 更新文章评论数
+        articleMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Article>()
+                        .eq(Article::getId, comment.getArticleId())
+                        .setSql("comment_count = GREATEST(0, comment_count - 1)"));
+
+        log.info("删除评论成功：id={}, articleId={}", id, comment.getArticleId());
     }
 }

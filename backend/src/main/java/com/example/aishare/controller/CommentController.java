@@ -39,4 +39,13 @@ public class CommentController {
         Comment comment = commentService.createComment(articleId, content, parentId);
         return Result.success(comment);
     }
+
+    /**
+     * 删除评论
+     */
+    @DeleteMapping("/{commentId}")
+    public Result<Void> deleteComment(@PathVariable Long commentId) {
+        commentService.deleteComment(commentId);
+        return Result.success();
+    }
 }

@@ -71,4 +71,9 @@ public interface ArticleService extends IService<Article> {
      * 按作者ID查询文章
      */
     Page<ArticleResponse> getArticlesByAuthor(Integer page, Integer size, Long authorId);
+
+    /**
+     * 取消点赞文章
+     */
+    void unlikeArticle(Long articleId, Long userId);
 }

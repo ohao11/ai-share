@@ -19,4 +19,9 @@ public interface TagService extends IService<Tag> {
      * 根据 Slug 获取标签
      */
     Tag getBySlug(String slug);
+
+    /**
+     * 创建标签
+     */
+    Tag createTag(Tag tag);
 }

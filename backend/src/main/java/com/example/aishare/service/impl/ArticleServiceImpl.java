@@ -258,6 +258,36 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return responsePage;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void unlikeArticle(Long articleId, Long userId) {
+        Article article = getById(articleId);
+        if (article == null) {
+            throw new BusinessException("文章不存在");
+        }
+
+        // 查找点赞记录
+        LambdaQueryWrapper<ArticleLike> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ArticleLike::getArticleId, articleId)
+                    .eq(ArticleLike::getUserId, userId);
+        ArticleLike existingLike = articleLikeMapper.selectOne(queryWrapper);
+
+        if (existingLike == null) {
+            throw new BusinessException("尚未点赞");
+        }
+
+        // 删除点赞记录
+        articleLikeMapper.deleteById(existingLike.getId());
+
+        // 减少点赞数
+        baseMapper.update(null,
+                new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Article>()
+                        .eq(Article::getId, articleId)
+                        .setSql("like_count = GREATEST(0, like_count - 1)"));
+
+        log.info("取消点赞成功：articleId={}, userId={}", articleId, userId);
+    }
+
     private ArticleResponse convertToArticleResponse(Article article) {
         ArticleResponse response = new ArticleResponse();
         response.setId(article.getId());

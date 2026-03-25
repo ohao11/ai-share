@@ -95,6 +95,16 @@ public class ArticleController {
     }
 
     /**
+     * 取消点赞
+     */
+    @DeleteMapping("/{id}/like")
+    public Result<Void> unlikeArticle(@PathVariable Long id) {
+        UserResponse user = userService.getCurrentUser();
+        articleService.unlikeArticle(id, user.getId());
+        return Result.success();
+    }
+
+    /**
      * 检查是否点赞
      */
     @GetMapping("/{id}/liked")

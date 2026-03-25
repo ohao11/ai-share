@@ -44,4 +44,12 @@ public class TagController {
     public Result<Tag> getTagBySlug(@PathVariable String slug) {
         return Result.success(tagService.getBySlug(slug));
     }
+
+    /**
+     * 创建标签
+     */
+    @PostMapping
+    public Result<Tag> createTag(@RequestBody Tag tag) {
+        return Result.success(tagService.createTag(tag));
+    }
 }

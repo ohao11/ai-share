@@ -19,4 +19,9 @@ public interface CommentService extends IService<Comment> {
      * 发表评论
      */
     Comment createComment(Long articleId, String content, Long parentId);
+
+    /**
+     * 删除评论
+     */
+    void deleteComment(Long id);
 }

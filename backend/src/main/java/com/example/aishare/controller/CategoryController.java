@@ -35,4 +35,31 @@ public class CategoryController {
     public Result<Category> getCategoryBySlug(@PathVariable String slug) {
         return Result.success(categoryService.getBySlug(slug));
     }
+
+    /**
+     * 创建分类
+     */
+    @PostMapping
+    public Result<Category> createCategory(@RequestBody Category category) {
+        return Result.success(categoryService.createCategory(category));
+    }
+
+    /**
+     * 更新分类
+     */
+    @PutMapping("/{id}")
+    public Result<Category> updateCategory(
+            @PathVariable Long id,
+            @RequestBody Category category) {
+        return Result.success(categoryService.updateCategory(id, category));
+    }
+
+    /**
+     * 删除分类
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
+        return Result.success();
+    }
 }
