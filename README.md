@@ -69,10 +69,21 @@ GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
 
-### 3. 一键部署
+### 3. 构建与部署
+
+**构建镜像：**
 ```bash
-# 构建镜像并启动
-./build.sh && docker compose up -d
+# 构建并推送到阿里云镜像仓库（版本号自动+1）
+./build.sh
+
+# 仅本地构建，不推送
+./build.sh --no-push
+```
+
+**启动服务：**
+```bash
+# 拉取镜像并启动
+docker compose pull && docker compose up -d
 
 # 查看服务状态
 docker compose ps
@@ -80,6 +91,17 @@ docker compose ps
 # 查看日志
 docker compose logs -f backend
 ```
+
+**版本管理：**
+- 版本号存储在 `version` 文件中
+- 每次 `./build.sh` 自动递增补丁版本号 (如 0.0.1 → 0.0.2)
+- 镜像同时打上版本标签和 `latest` 标签
+
+**镜像地址：**
+| 镜像 | 地址 |
+|------|------|
+| 后端 | `registry.cn-shanghai.aliyuncs.com/bountyteam/ai-share-backend` |
+| 前端 | `registry.cn-shanghai.aliyuncs.com/bountyteam/ai-share-frontend` |
 
 ### 4. 访问应用
 | 服务 | 地址 |
@@ -126,7 +148,8 @@ ai-share/
 │   ├── PRD.md                  # 产品需求文档
 │   └── DESIGN.md               # 设计文档
 ├── docker-compose.yml          # Docker 编排
-├── build.sh                    # 构建脚本
+├── build.sh                    # 构建脚本（版本自动递增）
+├── version                     # 版本号文件
 └── .env.example                # 环境变量模板
 ```
 
