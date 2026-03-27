@@ -1,7 +1,10 @@
 package com.example.aishare.service;
 
+import com.example.aishare.dto.request.ConfirmUploadRequest;
 import com.example.aishare.dto.request.PresignedUrlRequest;
+import com.example.aishare.dto.response.PresignedUrlResponse;
 import com.example.aishare.dto.response.UploadResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 文件上传服务接口
@@ -9,14 +12,19 @@ import com.example.aishare.dto.response.UploadResponse;
 public interface UploadService {
 
     /**
+     * 直接上传文件
+     */
+    UploadResponse uploadFile(MultipartFile file, String folder);
+
+    /**
      * 获取预签名上传 URL
      */
-    String getPresignedUrl(PresignedUrlRequest request);
+    PresignedUrlResponse getPresignedUrlResponse(PresignedUrlRequest request);
 
     /**
      * 确认上传完成
      */
-    UploadResponse confirmUpload(PresignedUrlRequest request, String objectName);
+    UploadResponse confirmUpload(ConfirmUploadRequest request);
 
     /**
      * 删除文件

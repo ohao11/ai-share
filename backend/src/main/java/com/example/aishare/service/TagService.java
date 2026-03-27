@@ -24,4 +24,14 @@ public interface TagService extends IService<Tag> {
      * 创建标签
      */
     Tag createTag(Tag tag);
+
+    /**
+     * 更新标签
+     */
+    Tag updateTag(Tag tag);
+
+    /**
+     * 删除标签
+     */
+    void deleteTag(Long id);
 }

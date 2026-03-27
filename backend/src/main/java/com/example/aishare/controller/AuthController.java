@@ -5,11 +5,14 @@ import com.example.aishare.dto.request.LoginRequest;
 import com.example.aishare.dto.request.RegisterRequest;
 import com.example.aishare.dto.response.LoginResponse;
 import com.example.aishare.dto.response.UserResponse;
+import com.example.aishare.security.RsaUtil;
 import com.example.aishare.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 认证控制器
@@ -21,12 +24,24 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+    private final RsaUtil rsaUtil;
+
+    /**
+     * 获取 RSA 公钥
+     */
+    @GetMapping("/public-key")
+    public Result<Map<String, String>> getPublicKey() {
+        return Result.success(Map.of("publicKey", rsaUtil.getPublicKeyBase64()));
+    }
 
     /**
      * 用户登录
      */
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        // 解密密码
+        String decryptedPassword = rsaUtil.decrypt(request.getPassword());
+        request.setPassword(decryptedPassword);
         return Result.success(userService.login(request));
     }
 
@@ -35,6 +50,9 @@ public class AuthController {
      */
     @PostMapping("/register")
     public Result<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+        // 解密密码
+        String decryptedPassword = rsaUtil.decrypt(request.getPassword());
+        request.setPassword(decryptedPassword);
         return Result.success(userService.register(request));
     }
 

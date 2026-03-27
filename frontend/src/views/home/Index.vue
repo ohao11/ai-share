@@ -2,32 +2,36 @@
   <div class="home-page">
     <!-- 头部导航 -->
     <header class="site-header">
-      <div class="container">
-        <div class="logo">AI Share</div>
+      <div class="header-container">
+        <div class="header-left">
+          <router-link to="/" class="logo">
+            <span class="logo-icon">✦</span>
+            <span class="logo-text">实战AI</span>
+          </router-link>
+        </div>
         <nav class="main-nav">
-          <router-link to="/">首页</router-link>
-          <div class="nav-dropdown">
-            <a href="#" @click.prevent="showCategories = !showCategories">分类 ▾</a>
-            <ul v-if="showCategories" class="dropdown-menu">
-              <li v-for="cat in categories" :key="cat.id">
-                <router-link :to="`/category/${cat.slug}`">{{ cat.name }}</router-link>
-              </li>
-            </ul>
-          </div>
-          <router-link to="/admin" v-if="authStore.isAdmin">管理</router-link>
+          <router-link to="/" class="nav-item" :class="{ active: $route.path === '/' }">
+            <el-icon><HomeFilled /></el-icon>
+            <span>首页</span>
+          </router-link>
           <template v-if="authStore.isAuthenticated">
-            <router-link to="/article/create" class="create-btn">
+            <router-link to="/article/create" class="nav-item create-btn">
               <el-icon><Plus /></el-icon>
-              写文章
+              <span>写文章</span>
             </router-link>
-            <router-link to="/user">
+            <router-link to="/user" class="nav-item user-menu">
+              <el-avatar :size="28" v-if="authStore.user?.avatar" :src="authStore.user.avatar" />
+              <span v-else class="user-avatar-placeholder">{{ userInitial }}</span>
               <span class="user-name">{{ authStore.user?.username }}</span>
             </router-link>
-            <a href="#" @click.prevent="handleLogout">退出</a>
+            <a href="#" @click.prevent="handleLogout" class="nav-item logout-btn">
+              <el-icon><SwitchButton /></el-icon>
+              <span>退出</span>
+            </a>
           </template>
           <template v-else>
-            <router-link to="/login">登录</router-link>
-            <router-link to="/register">注册</router-link>
+            <router-link to="/login" class="nav-item login-btn">登录</router-link>
+            <router-link to="/register" class="nav-item register-btn">注册</router-link>
           </template>
         </nav>
       </div>
@@ -39,6 +43,26 @@
         <div class="content-wrapper">
           <!-- 文章列表 -->
           <div class="article-list">
+            <!-- 分类标签导航 -->
+            <div class="category-tabs">
+              <span
+                class="category-tab"
+                :class="{ active: selectedCategoryId === null }"
+                @click="selectCategory(null)"
+              >
+                全部
+              </span>
+              <span
+                v-for="cat in categories"
+                :key="cat.id"
+                class="category-tab"
+                :class="{ active: selectedCategoryId === cat.id }"
+                @click="selectCategory(cat.id)"
+              >
+                {{ cat.name }}
+              </span>
+            </div>
+
             <div class="filters">
               <el-input
                 v-model="keyword"
@@ -62,22 +86,28 @@
 
               <div v-for="article in articles" :key="article.id" class="article-card">
                 <router-link :to="`/article/${article.id}`" class="article-link">
-                  <h2 class="article-title">{{ article.title }}</h2>
-                  <p class="article-summary">{{ article.summary }}</p>
-                  <div class="article-meta">
-                    <span class="meta-item">
-                      <el-icon><View /></el-icon>
-                      {{ article.viewCount }}
-                    </span>
-                    <span class="meta-item">
-                      <el-icon><Star /></el-icon>
-                      {{ article.likeCount }}
-                    </span>
-                    <span class="meta-item">
-                      <el-icon><ChatDotRound /></el-icon>
-                      {{ article.commentCount }}
-                    </span>
-                    <span class="meta-item time">{{ formatDate(article.createdAt || '') }}</span>
+                  <!-- 封面图 -->
+                  <div v-if="article.coverImage" class="article-cover">
+                    <img :src="article.coverImage" alt="封面" />
+                  </div>
+                  <div class="article-content-wrapper">
+                    <h2 class="article-title">{{ article.title }}</h2>
+                    <p class="article-summary">{{ article.summary }}</p>
+                    <div class="article-meta">
+                      <span class="meta-item">
+                        <el-icon><View /></el-icon>
+                        {{ article.viewCount }}
+                      </span>
+                      <span class="meta-item">
+                        <el-icon><Star /></el-icon>
+                        {{ article.likeCount }}
+                      </span>
+                      <span class="meta-item">
+                        <el-icon><ChatDotRound /></el-icon>
+                        {{ article.commentCount }}
+                      </span>
+                      <span class="meta-item time">{{ formatDate(article.createdAt || '') }}</span>
+                    </div>
                   </div>
                 </router-link>
               </div>
@@ -107,6 +137,8 @@
                   :key="tag.id"
                   size="small"
                   class="tag-item"
+                  :class="{ active: selectedTagId === tag.id }"
+                  @click="selectTag(tag.id)"
                 >
                   {{ tag.name }}
                 </el-tag>
@@ -116,9 +148,9 @@
             <div class="sidebar-widget">
               <h3>分类</h3>
               <ul class="category-list">
-                <li v-for="cat in categories" :key="cat.id">
-                  <router-link :to="`/category/${cat.slug}`">{{ cat.name }}</router-link>
-                  <span class="count">({{ cat.sortOrder }})</span>
+                <li v-for="cat in categories" :key="cat.id" :class="{ active: selectedCategoryId === cat.id }">
+                  <a href="#" @click.prevent="selectCategory(cat.id)">{{ cat.name }}</a>
+                  <span class="count">{{ cat.articleCount || 0 }} 篇</span>
                 </li>
               </ul>
             </div>
@@ -130,22 +162,21 @@
     <!-- 页脚 -->
     <footer class="site-footer">
       <div class="container">
-        <p>&copy; 2026 AI Share. All rights reserved.</p>
+        <p>&copy; 2026 实战AI. All rights reserved.</p>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { getArticlesApi, getHotTagsApi, getCategoriesApi, logoutApi } from '@/api'
+import { getArticlesApi, getHotTagsApi, getCategoriesApi, logoutApi, getArticlesByTagApi } from '@/api'
 import type { Article, Tag, Category } from '@/types'
 import { formatDate } from '@/utils/format'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 
 const loading = ref(false)
@@ -156,20 +187,52 @@ const keyword = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const showCategories = ref(false)
+const selectedCategoryId = ref<number | null>(null)
+const selectedTagId = ref<number | null>(null)
+
+const userInitial = computed(() => {
+  const username = authStore.user?.username || 'U'
+  return username.charAt(0).toUpperCase()
+})
 
 const loadArticles = async () => {
   loading.value = true
   try {
-    const categoryId = route.params.slug ? undefined : undefined
-    const res = await getArticlesApi(currentPage.value, pageSize.value, categoryId, keyword.value)
-    articles.value = res.data
-    total.value = res.total
+    if (selectedTagId.value) {
+      // 按标签筛选
+      const res = await getArticlesByTagApi(selectedTagId.value, currentPage.value, pageSize.value)
+      articles.value = res.data
+      total.value = res.total
+    } else {
+      // 正常加载或按分类筛选
+      const res = await getArticlesApi(currentPage.value, pageSize.value, selectedCategoryId.value ?? undefined, keyword.value)
+      articles.value = res.data
+      total.value = res.total
+    }
   } catch (error) {
     console.error('加载文章失败:', error)
   } finally {
     loading.value = false
   }
+}
+
+const selectCategory = (categoryId: number | null) => {
+  selectedCategoryId.value = categoryId
+  selectedTagId.value = null // 清除标签筛选
+  currentPage.value = 1
+  loadArticles()
+}
+
+const selectTag = (tagId: number | null) => {
+  if (selectedTagId.value === tagId) {
+    // 点击已选中的标签，取消选中
+    selectedTagId.value = null
+  } else {
+    selectedTagId.value = tagId
+    selectedCategoryId.value = null // 清除分类筛选
+  }
+  currentPage.value = 1
+  loadArticles()
 }
 
 const loadTags = async () => {
@@ -215,79 +278,163 @@ onMounted(() => {
 }
 
 .site-header {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1rem 0;
+  background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 
-  .container {
+  .header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
   .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #409eff;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 1.35rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .logo-icon {
+      font-size: 1.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .logo-text {
+      letter-spacing: 0.5px;
+    }
   }
 
   .main-nav {
     display: flex;
-    gap: 1.5rem;
+    gap: 0.5rem;
     align-items: center;
 
-    a {
-      color: #333;
+    .nav-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
       text-decoration: none;
+      color: #4a5568;
+      font-size: 0.925rem;
+      font-weight: 500;
+      transition: all 0.25s ease;
       cursor: pointer;
+      border: none;
+      background: transparent;
+
+      .el-icon {
+        font-size: 1.1rem;
+      }
 
       &:hover {
-        color: #409eff;
+        background: rgba(102, 126, 234, 0.08);
+        color: #667eea;
+      }
+
+      &.active {
+        background: rgba(102, 126, 234, 0.12);
+        color: #667eea;
+      }
+
+      .user-avatar-placeholder {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .user-name {
+        margin-left: 0.25rem;
       }
     }
 
     .create-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      background: #409eff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      transition: background 0.3s;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 
       &:hover {
-        background: #66b1ff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         color: #fff;
       }
     }
 
-    .nav-dropdown {
-      position: relative;
+    .login-btn, .register-btn {
+      font-weight: 600;
 
-      .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background: #fff;
-        border: 1px solid #eee;
-        border-radius: 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        padding: 0.5rem 0;
-        min-width: 120px;
-        z-index: 100;
-
-        li {
-          list-style: none;
-
-          a {
-            display: block;
-            padding: 0.5rem 1rem;
-            white-space: nowrap;
-          }
-        }
+      &:hover {
+        background: rgba(102, 126, 234, 0.12);
       }
     }
+
+    .login-btn {
+      color: #667eea;
+    }
+
+    .register-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+        color: #fff;
+      }
+    }
+
+    .logout-btn {
+      color: #e53e3e;
+
+      &:hover {
+        background: rgba(229, 62, 62, 0.1);
+        color: #e53e3e;
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
   }
 }
 
@@ -314,6 +461,37 @@ onMounted(() => {
   border-radius: 8px;
   padding: 1.5rem;
 
+  .category-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+
+    .category-tab {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      color: #666;
+      background: #f5f7fa;
+      border: 1px solid transparent;
+
+      &:hover {
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.08);
+      }
+
+      &.active {
+        color: #fff;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+    }
+  }
+
   .filters {
     margin-bottom: 1.5rem;
   }
@@ -330,10 +508,31 @@ onMounted(() => {
       .article-link {
         text-decoration: none;
         color: inherit;
+        display: flex;
+        gap: 1.25rem;
 
         &:hover .article-title {
           color: #409eff;
         }
+      }
+
+      .article-cover {
+        flex-shrink: 0;
+        width: 180px;
+        height: 120px;
+        border-radius: 8px;
+        overflow: hidden;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .article-content-wrapper {
+        flex: 1;
+        min-width: 0;
       }
 
       .article-title {
@@ -396,6 +595,17 @@ onMounted(() => {
 
     .tag-item {
       cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+
+      &.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-color: transparent;
+      }
     }
   }
 
@@ -407,9 +617,22 @@ onMounted(() => {
       justify-content: space-between;
       padding: 0.5rem 0;
       border-bottom: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
 
       &:last-child {
         border-bottom: none;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 0.5rem 0.75rem;
+        margin: 0 -0.75rem;
+        border-radius: 6px;
+
+        a {
+          color: #667eea;
+          font-weight: 600;
+        }
       }
 
       a {

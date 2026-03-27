@@ -30,6 +30,11 @@ public class ArticleResponse {
     private OffsetDateTime updatedAt;
 
     /**
+     * 标签ID列表（用于编辑时回显）
+     */
+    private List<Long> tagIds;
+
+    /**
      * 文章标签列表
      */
     private List<TagResponse> tags;

@@ -54,13 +54,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { loginApi } from '@/api'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const formRef = ref<FormInstance>()
@@ -81,6 +83,14 @@ const rules: FormRules = {
     { min: 6, message: '密码长度至少 6 位', trigger: 'blur' }
   ]
 }
+
+// 处理 URL 中的错误参数
+onMounted(() => {
+  const error = route.query.error as string
+  if (error) {
+    ElMessage.error(decodeURIComponent(error))
+  }
+})
 
 const handleLogin = async () => {
   if (!formRef.value) return
@@ -113,7 +123,7 @@ const handleOAuthLogin = (provider: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8ecf1 100%);
 }
 
 .login-container {
@@ -124,15 +134,69 @@ const handleOAuthLogin = (provider: string) => {
 
 .login-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.12);
 
   .title {
     text-align: center;
     font-size: 1.75rem;
-    color: #333;
+    font-weight: 600;
+    color: #2d3748;
     margin-bottom: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 1.5rem;
+
+    .el-form-item__label {
+      font-weight: 500;
+      color: #4a5568;
+      font-size: 0.9rem;
+    }
+  }
+
+  :deep(.el-input__wrapper) {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s;
+    background: #fff;
+
+    &:hover {
+      border-color: #9ca3af;
+      box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+    }
+
+    &.is-focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    }
+  }
+
+  :deep(.el-button--primary) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 500;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
   }
 }
 
@@ -151,14 +215,14 @@ const handleOAuthLogin = (provider: string) => {
       top: 50%;
       width: 100%;
       height: 1px;
-      background: #e0e0e0;
+      background: linear-gradient(to right, transparent, #e2e8f0, transparent);
     }
 
     span {
       position: relative;
       background: #fff;
       padding: 0 1rem;
-      color: #999;
+      color: #94a3b8;
       font-size: 0.875rem;
     }
   }
@@ -173,6 +237,20 @@ const handleOAuthLogin = (provider: string) => {
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      border-radius: 8px;
+      padding: 0.625rem 1rem;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #4a5568;
+      font-weight: 500;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: #667eea;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+        transform: translateY(-1px);
+      }
 
       .icon {
         width: 20px;
@@ -184,14 +262,17 @@ const handleOAuthLogin = (provider: string) => {
 
 .links {
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
 
   a {
-    color: #409eff;
+    color: #667eea;
     text-decoration: none;
     font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
 
     &:hover {
+      color: #764ba2;
       text-decoration: underline;
     }
   }

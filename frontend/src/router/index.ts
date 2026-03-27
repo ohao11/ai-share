@@ -113,7 +113,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   // 设置页面标题
-  document.title = `${to.meta.title as string} - AI Share`
+  document.title = `${to.meta.title as string} - 实战AI`
 
   next()
 })

@@ -3,8 +3,10 @@ package com.example.aishare.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.aishare.common.exception.BusinessException;
 import com.example.aishare.entity.Category;
+import com.example.aishare.mapper.ArticleMapper;
 import com.example.aishare.mapper.CategoryMapper;
 import com.example.aishare.service.CategoryService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +18,28 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
+
+    private final ArticleMapper articleMapper;
 
     @Override
     public List<Category> getCategoryTree() {
-        return lambdaQuery()
+        List<Category> categories = lambdaQuery()
                 .orderByAsc(Category::getSortOrder)
                 .list();
+
+        // 统计每个分类的文章数量
+        for (Category category : categories) {
+            Long count = articleMapper.selectCount(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.example.aishare.entity.Article>()
+                            .eq(com.example.aishare.entity.Article::getCategoryId, category.getId())
+                            .eq(com.example.aishare.entity.Article::getStatus, 1) // 仅统计已发布的
+            );
+            category.setArticleCount(count.intValue());
+        }
+
+        return categories;
     }
 
     @Override

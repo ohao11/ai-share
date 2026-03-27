@@ -1,8 +1,10 @@
 package com.example.aishare.controller;
 
 import com.example.aishare.common.result.Result;
+import com.example.aishare.dto.request.CommentCreateRequest;
 import com.example.aishare.entity.Comment;
 import com.example.aishare.service.CommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +36,8 @@ public class CommentController {
     @PostMapping
     public Result<Comment> createComment(
             @PathVariable Long articleId,
-            @RequestParam String content,
-            @RequestParam(required = false) Long parentId) {
-        Comment comment = commentService.createComment(articleId, content, parentId);
+            @Valid @RequestBody CommentCreateRequest request) {
+        Comment comment = commentService.createComment(articleId, request.getContent(), request.getParentId());
         return Result.success(comment);
     }
 

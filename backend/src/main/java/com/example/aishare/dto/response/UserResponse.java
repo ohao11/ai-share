@@ -16,6 +16,7 @@ public class UserResponse {
     private String email;
     private String avatar;
     private Integer role;
+    private Integer status;
     private String provider;
     private OffsetDateTime createdAt;
 }

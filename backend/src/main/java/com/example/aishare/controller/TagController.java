@@ -38,6 +38,14 @@ public class TagController {
     }
 
     /**
+     * 根据 ID 获取标签
+     */
+    @GetMapping("/id/{id}")
+    public Result<Tag> getTagById(@PathVariable Long id) {
+        return Result.success(tagService.getById(id));
+    }
+
+    /**
      * 根据 Slug 获取标签
      */
     @GetMapping("/{slug}")
@@ -51,5 +59,23 @@ public class TagController {
     @PostMapping
     public Result<Tag> createTag(@RequestBody Tag tag) {
         return Result.success(tagService.createTag(tag));
+    }
+
+    /**
+     * 更新标签
+     */
+    @PutMapping("/{id}")
+    public Result<Tag> updateTag(@PathVariable Long id, @RequestBody Tag tag) {
+        tag.setId(id);
+        return Result.success(tagService.updateTag(tag));
+    }
+
+    /**
+     * 删除标签
+     */
+    @DeleteMapping("/{id}")
+    public Result<Void> deleteTag(@PathVariable Long id) {
+        tagService.deleteTag(id);
+        return Result.success();
     }
 }

@@ -1,15 +1,22 @@
-import { get, post, put, del, getPage } from './request'
-import type { LoginResponse, User, Article, Category, Tag, Comment } from '@/types'
+import { get, post, put, del, getPage, upload } from './request'
+import type { LoginResponse, User, Article, Category, Tag, Comment, PresignedUrlResponse, UploadResponse } from '@/types'
+import { encryptPassword } from '@/utils/rsa'
 
 /**
  * 认证相关 API
  */
-export function loginApi(email: string, password: string) {
-  return post<LoginResponse>('/auth/login', { email, password })
+export function getPublicKeyApi() {
+  return get<{ publicKey: string }>('/auth/public-key')
 }
 
-export function registerApi(username: string, email: string, password: string) {
-  return post<LoginResponse>('/auth/register', { username, email, password })
+export async function loginApi(email: string, password: string) {
+  const encryptedPassword = await encryptPassword(password)
+  return post<LoginResponse>('/auth/login', { email, password: encryptedPassword })
+}
+
+export async function registerApi(username: string, email: string, password: string) {
+  const encryptedPassword = await encryptPassword(password)
+  return post<LoginResponse>('/auth/register', { username, email, password: encryptedPassword })
 }
 
 export function getCurrentUserApi() {
@@ -29,6 +36,10 @@ export function getArticlesApi(page: number, size: number, categoryId?: number, 
 
 export function getArticlesByAuthorApi(authorId: number, page: number, size: number) {
   return getPage<Article>(`/articles/author/${authorId}`, { page, size })
+}
+
+export function getArticlesByTagApi(tagId: number, page: number, size: number) {
+  return getPage<Article>(`/articles/tag/${tagId}`, { page, size })
 }
 
 export function getArticleApi(id: number) {
@@ -101,6 +112,14 @@ export function createTagApi(data: Partial<Tag>) {
   return post<Tag>('/tags', data)
 }
 
+export function updateTagApi(id: number, data: Partial<Tag>) {
+  return put<Tag>(`/tags/${id}`, data)
+}
+
+export function deleteTagApi(id: number) {
+  return del(`/tags/${id}`)
+}
+
 /**
  * 评论相关 API
  */
@@ -119,12 +138,19 @@ export function deleteCommentApi(articleId: number, commentId: number) {
 /**
  * 上传相关 API
  */
-export function getPresignedUrlApi(fileName: string, fileSize: number, mimeType: string, folder?: string) {
-  return post<string>('/upload/presigned-url', { fileName, fileSize, mimeType, folder })
+export function uploadFileApi(file: File, folder: string = 'uploads') {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('folder', folder)
+  return upload<UploadResponse>('/upload', formData)
 }
 
-export function confirmUploadApi(fileName: string, fileSize: number, mimeType: string) {
-  return post('/upload/confirm', { fileName, fileSize, mimeType })
+export function getPresignedUrlApi(fileName: string, fileSize: number, mimeType: string, folder?: string) {
+  return post<PresignedUrlResponse>('/upload/presigned-url', { fileName, fileSize, mimeType, folder })
+}
+
+export function confirmUploadApi(fileName: string, fileSize: number, mimeType: string, objectName: string) {
+  return post('/upload/confirm', { fileName, fileSize, mimeType, objectName })
 }
 
 export function deleteFileApi(fileId: number) {

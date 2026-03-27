@@ -113,4 +113,12 @@ export function del<T>(url: string): Promise<ApiResponse<T>> {
   return request.delete(url).then(res => res.data as ApiResponse<T>)
 }
 
+export function upload<T>(url: string, formData: FormData): Promise<ApiResponse<T>> {
+  return request.post(url, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then(res => res.data as ApiResponse<T>)
+}
+
 export default request

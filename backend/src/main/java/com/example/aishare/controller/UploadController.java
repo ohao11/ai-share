@@ -1,13 +1,16 @@
 package com.example.aishare.controller;
 
 import com.example.aishare.common.result.Result;
+import com.example.aishare.dto.request.ConfirmUploadRequest;
 import com.example.aishare.dto.request.PresignedUrlRequest;
+import com.example.aishare.dto.response.PresignedUrlResponse;
 import com.example.aishare.dto.response.UploadResponse;
 import com.example.aishare.service.UploadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 文件上传控制器
@@ -21,22 +24,31 @@ public class UploadController {
     private final UploadService uploadService;
 
     /**
+     * 直接上传文件
+     */
+    @PostMapping
+    public Result<UploadResponse> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "folder", required = false, defaultValue = "uploads") String folder) {
+        UploadResponse response = uploadService.uploadFile(file, folder);
+        return Result.success(response);
+    }
+
+    /**
      * 获取预签名上传 URL
      */
     @PostMapping("/presigned-url")
-    public Result<String> getPresignedUrl(@Valid @RequestBody PresignedUrlRequest request) {
-        String url = uploadService.getPresignedUrl(request);
-        return Result.success(url, "获取上传 URL 成功");
+    public Result<PresignedUrlResponse> getPresignedUrl(@Valid @RequestBody PresignedUrlRequest request) {
+        PresignedUrlResponse response = uploadService.getPresignedUrlResponse(request);
+        return Result.success("获取上传 URL 成功", response);
     }
 
     /**
      * 确认上传完成
      */
     @PostMapping("/confirm")
-    public Result<UploadResponse> confirmUpload(@RequestBody PresignedUrlRequest request) {
-        // TODO: 从 URL 中提取 objectName
-        String objectName = "uploads/" + request.getFileName();
-        UploadResponse response = uploadService.confirmUpload(request, objectName);
+    public Result<UploadResponse> confirmUpload(@RequestBody ConfirmUploadRequest request) {
+        UploadResponse response = uploadService.confirmUpload(request);
         return Result.success(response);
     }
 

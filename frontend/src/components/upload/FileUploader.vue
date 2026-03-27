@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { getPresignedUrlApi, confirmUploadApi } from '@/api'
-import type { UploadResponse } from '@/types'
+import type { UploadResponse, PresignedUrlResponse } from '@/types'
 
 interface FileItem {
   file: File
@@ -119,7 +119,9 @@ const uploadFile = async (fileItem: FileItem) => {
   try {
     // 1. 获取预签名 URL
     const presignedUrlRes = await getPresignedUrlApi(file.name, file.size, file.type, 'uploads')
-    const presignedUrl = presignedUrlRes.data
+    const presignedData = presignedUrlRes.data as PresignedUrlResponse
+    const presignedUrl = presignedData.presignedUrl
+    const objectName = presignedData.objectName
 
     // 2. 上传文件到 MinIO
     const uploadResponse = await fetch(presignedUrl, {
@@ -135,7 +137,7 @@ const uploadFile = async (fileItem: FileItem) => {
     }
 
     // 3. 确认上传完成
-    const confirmResponse = await confirmUploadApi(file.name, file.size, file.type)
+    const confirmResponse = await confirmUploadApi(file.name, file.size, file.type, objectName)
     const uploadData = confirmResponse.data as UploadResponse
 
     fileItem.status = 'success'

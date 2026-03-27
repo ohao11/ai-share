@@ -59,20 +59,32 @@ public class SecurityConfig {
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             // 授权规则
             .authorizeHttpRequests(auth -> auth
-                // 公开接口
+                // 公开接口 - 仅 GET 请求
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                    "/api/articles/**",
+                    "/api/categories/**",
+                    "/api/tags/**"
+                ).permitAll()
+                // 认证相关接口
                 .requestMatchers(
                     "/api/auth/**",
                     "/oauth2/**",
-                    "/api/articles/**",
-                    "/api/categories/**",
-                    "/api/tags/**",
-                    "/api/comments/**",
                     "/actuator/health"
                 ).permitAll()
                 // 需要认证的接口
                 .requestMatchers(
                     "/api/admin/**",
                     "/api/upload/**"
+                ).authenticated()
+                // 文章和评论的写操作需要认证
+                .requestMatchers(
+                    "/api/articles",
+                    "/api/articles/",
+                    "/api/articles/**"
+                ).authenticated()
+                .requestMatchers(
+                    "/api/articles/*/comments",
+                    "/api/articles/*/comments/**"
                 ).authenticated()
                 // 其他请求
                 .anyRequest().authenticated()

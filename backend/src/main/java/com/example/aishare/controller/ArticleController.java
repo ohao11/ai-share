@@ -41,6 +41,19 @@ public class ArticleController {
     }
 
     /**
+     * 全文搜索文章
+     */
+    @GetMapping("/search")
+    public PageResult<ArticleResponse> searchArticles(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam String keyword) {
+        Page<ArticleResponse> result = articleService.searchArticles(page, size, categoryId, keyword);
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+    }
+
+    /**
      * 获取文章详情
      */
     @GetMapping("/{id}")
@@ -123,6 +136,18 @@ public class ArticleController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
         Page<ArticleResponse> result = articleService.getArticlesByAuthor(page, size, authorId);
+        return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+    }
+
+    /**
+     * 按标签查询文章
+     */
+    @GetMapping("/tag/{tagId}")
+    public PageResult<ArticleResponse> getArticlesByTag(
+            @PathVariable Long tagId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<ArticleResponse> result = articleService.getArticlesByTag(page, size, tagId);
         return PageResult.of(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
     }
 }

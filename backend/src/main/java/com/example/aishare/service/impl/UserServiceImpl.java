@@ -19,8 +19,9 @@ import com.example.aishare.security.JwtTokenProvider;
 import com.example.aishare.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,12 +48,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .eq(User::getEmail, request.getEmail())
                 .one();
 
+        // 统一错误信息，避免用户枚举攻击
         if (user == null) {
-            throw new BusinessException("用户不存在");
+            throw new BusinessException("邮箱或密码错误");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException("密码错误");
+            throw new BusinessException("邮箱或密码错误");
         }
 
         if (user.getStatus() == SystemConstants.Status.DISABLED) {
@@ -73,12 +75,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Transactional(rollbackFor = Exception.class)
     public LoginResponse register(RegisterRequest request) {
         // 检查邮箱是否已存在
-        Long count = lambdaQuery()
+        Long emailCount = lambdaQuery()
                 .eq(User::getEmail, request.getEmail())
                 .count();
 
-        if (count > 0) {
+        if (emailCount > 0) {
             throw new BusinessException("邮箱已被注册");
+        }
+
+        // 检查用户名是否已存在
+        Long usernameCount = lambdaQuery()
+                .eq(User::getUsername, request.getUsername())
+                .count();
+
+        if (usernameCount > 0) {
+            throw new BusinessException("用户名已被使用");
         }
 
         // 创建用户
@@ -118,6 +129,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             save(user);
             log.info("OAuth 新用户注册：{}, provider: {}", email, provider);
         } else {
+            // 检查用户状态
+            if (user.getStatus() == SystemConstants.Status.DISABLED) {
+                throw new BusinessException("账号已被禁用");
+            }
             // 更新用户信息
             user.setAvatar(avatar);
             user.setProvider(provider);
@@ -143,10 +158,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public UserResponse getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = lambdaQuery()
-                .eq(User::getUsername, username)
-                .one();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException("用户未登录");
+        }
+
+        Long userId = jwtTokenProvider.getUserIdFromAuthentication(authentication);
+        User user = getById(userId);
 
         if (user == null) {
             throw new BusinessException("用户不存在");
@@ -163,6 +181,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         response.setEmail(user.getEmail());
         response.setAvatar(user.getAvatar());
         response.setRole(user.getRole());
+        response.setStatus(user.getStatus());
         response.setProvider(user.getProvider());
         response.setCreatedAt(user.getCreatedAt());
         return response;

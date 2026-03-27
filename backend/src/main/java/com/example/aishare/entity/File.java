@@ -24,9 +24,9 @@ public class File implements Serializable {
     private Long id;
 
     /**
-     * UUID
+     * UUID (数据库自动生成)
      */
-    private java.util.UUID uuid;
+    private String uuid;
 
     /**
      * 文件名

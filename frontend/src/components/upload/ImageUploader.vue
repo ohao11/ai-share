@@ -29,11 +29,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { getPresignedUrlApi, confirmUploadApi } from '@/api'
-import type { UploadResponse } from '@/types'
+import { ref, watch } from 'vue'
+import { Plus, Delete } from '@element-plus/icons-vue'
+import { uploadFileApi } from '@/api'
 
-defineProps({
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  },
   multiple: {
     type: Boolean,
     default: false
@@ -41,11 +45,17 @@ defineProps({
 })
 
 const emit = defineEmits<{
+  'update:modelValue': [url: string]
   change: [url: string | string[]]
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
-const imageSrc = ref<string>('')
+const imageSrc = ref<string>(props.modelValue || '')
+
+// 监听外部传入的值变化
+watch(() => props.modelValue, (newVal) => {
+  imageSrc.value = newVal || ''
+})
 
 
 const triggerUpload = () => {
@@ -58,29 +68,10 @@ const handleFileChange = async (event: Event) => {
   if (!file) return
 
   try {
-    // 1. 获取预签名 URL
-    const presignedUrlRes = await getPresignedUrlApi(file.name, file.size, file.type, 'images')
-    const presignedUrl = presignedUrlRes.data
-
-    // 2. 上传文件到 MinIO
-    const uploadResponse = await fetch(presignedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type
-      }
-    })
-
-    if (!uploadResponse.ok) {
-      throw new Error('上传失败')
-    }
-
-    // 3. 确认上传完成
-    const confirmResponse = await confirmUploadApi(file.name, file.size, file.type)
-    const uploadData = confirmResponse.data as UploadResponse
-
-    imageSrc.value = uploadData.fileUrl
-    emit('change', uploadData.fileUrl)
+    const result = await uploadFileApi(file, 'images')
+    imageSrc.value = result.data.fileUrl
+    emit('update:modelValue', result.data.fileUrl)
+    emit('change', result.data.fileUrl)
   } catch (error) {
     console.error('上传失败:', error)
   }
@@ -93,6 +84,7 @@ const handleFileChange = async (event: Event) => {
 
 const removeImage = () => {
   imageSrc.value = ''
+  emit('update:modelValue', '')
   emit('change', '')
 }
 </script>

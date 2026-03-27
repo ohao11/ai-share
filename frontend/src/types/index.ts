@@ -31,6 +31,8 @@ export interface Article {
   viewCount?: number
   likeCount?: number
   commentCount?: number
+  tagIds?: number[]
+  tags?: Tag[]
   publishedAt?: string
   createdAt?: string
   updatedAt?: string
@@ -43,6 +45,7 @@ export interface Category {
   description?: string
   parentId?: number
   sortOrder: number
+  articleCount?: number
   createdAt: string
 }
 
@@ -75,8 +78,13 @@ export interface PageResult<T> {
   timestamp: number
 }
 
+export interface PresignedUrlResponse {
+  presignedUrl: string
+  objectName: string
+}
+
 export interface UploadResponse {
-  id: number
+  fileId: string
   fileName: string
   fileUrl: string
   fileSize: number

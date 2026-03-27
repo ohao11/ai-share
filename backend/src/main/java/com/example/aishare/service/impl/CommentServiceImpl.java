@@ -3,11 +3,13 @@ package com.example.aishare.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.aishare.common.constants.SystemConstants;
 import com.example.aishare.common.exception.BusinessException;
+import com.example.aishare.dto.response.UserResponse;
 import com.example.aishare.entity.Article;
 import com.example.aishare.entity.Comment;
 import com.example.aishare.mapper.ArticleMapper;
 import com.example.aishare.mapper.CommentMapper;
 import com.example.aishare.service.CommentService;
+import com.example.aishare.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import java.util.List;
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
 
     private final ArticleMapper articleMapper;
+    private final UserService userService;
 
     @Override
     public List<Comment> getCommentsByArticle(Long articleId) {
@@ -38,12 +41,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Comment createComment(Long articleId, String content, Long parentId) {
+        // 获取当前用户
+        UserResponse currentUser = userService.getCurrentUser();
+
         Comment comment = new Comment();
         comment.setArticleId(articleId);
         comment.setContent(content);
         comment.setParentId(parentId);
         comment.setStatus(SystemConstants.CommentStatus.APPROVED); // TODO: 根据配置是否需要审核
-        comment.setUserId(1L); // TODO: 从当前用户获取
+        comment.setUserId(currentUser.getId());
         comment.setCreatedAt(OffsetDateTime.now());
         comment.setUpdatedAt(OffsetDateTime.now());
 
@@ -64,6 +70,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         Comment comment = getById(id);
         if (comment == null) {
             throw new BusinessException("评论不存在");
+        }
+
+        // 检查权限：只有评论作者才能删除
+        UserResponse currentUser = userService.getCurrentUser();
+        if (!comment.getUserId().equals(currentUser.getId())) {
+            throw new BusinessException("无权删除此评论");
         }
 
         // 删除评论

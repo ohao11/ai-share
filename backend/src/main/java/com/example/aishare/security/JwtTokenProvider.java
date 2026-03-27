@@ -80,7 +80,7 @@ public class JwtTokenProvider {
      * 验证 Token 并获取 Authentication
      */
     public Authentication getAuthentication(String token) {
-        String username = getUsernameFromToken(token);
+        Long userId = getUserIdFromToken(token);
         Integer role = getRoleFromToken(token);
 
         List<GrantedAuthority> authorities = new ArrayList<>();
@@ -89,8 +89,17 @@ public class JwtTokenProvider {
             authorities.add(new SimpleGrantedAuthority(roleName));
         }
 
-        User principal = new User(username, "", authorities);
+        // 使用 userId 作为 principal 的名称，便于后续查询
+        User principal = new User(String.valueOf(userId), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+    }
+
+    /**
+     * 从 Authentication 中获取用户 ID
+     */
+    public Long getUserIdFromAuthentication(Authentication authentication) {
+        String principalName = authentication.getName();
+        return Long.parseLong(principalName);
     }
 
     /**

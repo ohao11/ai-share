@@ -11,12 +11,18 @@ import com.example.aishare.dto.response.TagResponse;
 import com.example.aishare.entity.Article;
 import com.example.aishare.entity.ArticleLike;
 import com.example.aishare.entity.ArticleTag;
+import com.example.aishare.entity.Category;
 import com.example.aishare.entity.Tag;
+import com.example.aishare.entity.User;
 import com.example.aishare.mapper.ArticleLikeMapper;
 import com.example.aishare.mapper.ArticleMapper;
 import com.example.aishare.mapper.ArticleTagMapper;
+import com.example.aishare.mapper.CategoryMapper;
 import com.example.aishare.mapper.TagMapper;
+import com.example.aishare.mapper.UserMapper;
+import com.example.aishare.dto.response.UserResponse;
 import com.example.aishare.service.ArticleService;
+import com.example.aishare.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,21 +43,47 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     private final ArticleLikeMapper articleLikeMapper;
     private final ArticleTagMapper articleTagMapper;
     private final TagMapper tagMapper;
+    private final UserMapper userMapper;
+    private final CategoryMapper categoryMapper;
+    private final UserService userService;
 
     @Override
     public Page<ArticleResponse> getArticles(Integer page, Integer size, Long categoryId, String keyword) {
+        // 如果有关键词，使用全文搜索
+        if (keyword != null && !keyword.isBlank()) {
+            return searchArticles(page, size, categoryId, keyword);
+        }
+
         Page<Article> articlePage = new Page<>(page, size);
 
         Page<Article> result = lambdaQuery()
                 .eq(Article::getStatus, SystemConstants.ArticleStatus.PUBLISHED)
                 .eq(categoryId != null, Article::getCategoryId, categoryId)
-                .like(keyword != null && !keyword.isBlank(), Article::getTitle, keyword)
                 .orderByDesc(Article::getPublishedAt)
                 .page(articlePage);
 
         Page<ArticleResponse> responsePage = new Page<>(page, size);
         responsePage.setTotal(result.getTotal());
         responsePage.setRecords(result.getRecords().stream()
+                .map(this::convertToArticleResponse)
+                .toList());
+
+        return responsePage;
+    }
+
+    @Override
+    public Page<ArticleResponse> searchArticles(Integer page, Integer size, Long categoryId, String keyword) {
+        int offset = (page - 1) * size;
+        // 处理 NULL 值，使用 0 表示不筛选分类，使用空字符串表示不筛选关键词
+        Long effectiveCategoryId = categoryId != null ? categoryId : 0L;
+        String effectiveKeyword = keyword != null ? keyword : "";
+
+        List<Article> articles = baseMapper.searchArticles(effectiveCategoryId, effectiveKeyword, size, offset);
+        Long total = baseMapper.countSearchArticles(effectiveCategoryId, effectiveKeyword);
+
+        Page<ArticleResponse> responsePage = new Page<>(page, size);
+        responsePage.setTotal(total);
+        responsePage.setRecords(articles.stream()
                 .map(this::convertToArticleResponse)
                 .toList());
 
@@ -94,6 +126,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ArticleResponse createArticle(ArticleCreateRequest request) {
+        // 获取当前登录用户
+        UserResponse currentUser = userService.getCurrentUser();
+
         Article article = new Article();
         article.setTitle(request.getTitle());
         article.setSlug(request.getSlug());
@@ -102,7 +137,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         article.setCoverImage(request.getCoverImage());
         article.setCategoryId(request.getCategoryId());
         article.setStatus(request.getStatus() != null ? request.getStatus() : SystemConstants.ArticleStatus.DRAFT);
-        article.setAuthorId(1L); // TODO: 从当前用户获取
+        article.setAuthorId(currentUser.getId());
 
         save(article);
 
@@ -120,6 +155,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Article article = getById(id);
         if (article == null) {
             throw new BusinessException("文章不存在");
+        }
+
+        // 检查权限：只有作者才能修改文章
+        UserResponse currentUser = userService.getCurrentUser();
+        if (!article.getAuthorId().equals(currentUser.getId())) {
+            throw new BusinessException("无权修改此文章");
         }
 
         article.setTitle(request.getTitle());
@@ -154,6 +195,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             throw new BusinessException("文章不存在");
         }
 
+        // 检查权限：只有作者才能删除文章
+        UserResponse currentUser = userService.getCurrentUser();
+        if (!article.getAuthorId().equals(currentUser.getId())) {
+            throw new BusinessException("无权删除此文章");
+        }
+
         removeById(id);
     }
 
@@ -163,6 +210,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Article article = getById(id);
         if (article == null) {
             throw new BusinessException("文章不存在");
+        }
+
+        // 检查权限：只有作者才能发布文章
+        UserResponse currentUser = userService.getCurrentUser();
+        if (!article.getAuthorId().equals(currentUser.getId())) {
+            throw new BusinessException("无权发布此文章");
         }
 
         article.setStatus(SystemConstants.ArticleStatus.PUBLISHED);
@@ -176,6 +229,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Article article = getById(id);
         if (article == null) {
             throw new BusinessException("文章不存在");
+        }
+
+        // 检查权限：只有作者才能下架文章
+        UserResponse currentUser = userService.getCurrentUser();
+        if (!article.getAuthorId().equals(currentUser.getId())) {
+            throw new BusinessException("无权下架此文章");
         }
 
         article.setStatus(SystemConstants.ArticleStatus.REMOVED);
@@ -288,6 +347,33 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         log.info("取消点赞成功：articleId={}, userId={}", articleId, userId);
     }
 
+    @Override
+    public Page<ArticleResponse> getArticlesByTag(Integer page, Integer size, Long tagId) {
+        // 先查询该标签关联的文章ID列表
+        List<Long> articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+        if (articleIds == null || articleIds.isEmpty()) {
+            Page<ArticleResponse> emptyPage = new Page<>(page, size);
+            emptyPage.setTotal(0);
+            emptyPage.setRecords(Collections.emptyList());
+            return emptyPage;
+        }
+
+        Page<Article> articlePage = new Page<>(page, size);
+        Page<Article> result = lambdaQuery()
+                .in(Article::getId, articleIds)
+                .eq(Article::getStatus, SystemConstants.ArticleStatus.PUBLISHED)
+                .orderByDesc(Article::getPublishedAt)
+                .page(articlePage);
+
+        Page<ArticleResponse> responsePage = new Page<>(page, size);
+        responsePage.setTotal(result.getTotal());
+        responsePage.setRecords(result.getRecords().stream()
+                .map(this::convertToArticleResponse)
+                .toList());
+
+        return responsePage;
+    }
+
     private ArticleResponse convertToArticleResponse(Article article) {
         ArticleResponse response = new ArticleResponse();
         response.setId(article.getId());
@@ -306,9 +392,26 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         response.setCreatedAt(article.getCreatedAt());
         response.setUpdatedAt(article.getUpdatedAt());
 
+        // 查询作者名称
+        if (article.getAuthorId() != null) {
+            User author = userMapper.selectById(article.getAuthorId());
+            if (author != null) {
+                response.setAuthorName(author.getUsername());
+            }
+        }
+
+        // 查询分类名称
+        if (article.getCategoryId() != null) {
+            Category category = categoryMapper.selectById(article.getCategoryId());
+            if (category != null) {
+                response.setCategoryName(category.getName());
+            }
+        }
+
         // 查询文章标签
         List<Long> tagIds = articleTagMapper.selectTagIdsByArticleId(article.getId());
         if (tagIds != null && !tagIds.isEmpty()) {
+            response.setTagIds(tagIds);
             List<Tag> tags = tagMapper.selectBatchIds(tagIds);
             List<TagResponse> tagResponses = tags.stream().map(tag -> {
                 TagResponse tr = new TagResponse();
@@ -319,6 +422,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }).toList();
             response.setTags(tagResponses);
         } else {
+            response.setTagIds(Collections.emptyList());
             response.setTags(Collections.emptyList());
         }
 

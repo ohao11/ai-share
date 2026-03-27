@@ -1,5 +1,6 @@
 package com.example.aishare.security;
 
+import com.example.aishare.common.exception.BusinessException;
 import com.example.aishare.dto.response.LoginResponse;
 import com.example.aishare.dto.response.UserResponse;
 import com.example.aishare.entity.User;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -68,19 +70,26 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         if (email == null) {
             log.error("OAuth 登录失败：无法获取邮箱地址，provider={}", provider);
-            response.sendRedirect("/?error=oauth_no_email");
+            response.sendRedirect("/login?error=" + URLEncoder.encode("无法获取邮箱地址", StandardCharsets.UTF_8));
             return;
         }
 
         // OAuth 登录或注册并获取 JWT
         log.info("开始处理 OAuth 登录：provider={}, email={}", provider, email);
-        LoginResponse loginResponse = userService.oauthLogin(provider, email, name, avatar, providerId);
+        LoginResponse loginResponse;
+        try {
+            loginResponse = userService.oauthLogin(provider, email, name, avatar, providerId);
+        } catch (BusinessException e) {
+            log.warn("OAuth 登录失败：{}", e.getMessage());
+            response.sendRedirect("/login?error=" + URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8));
+            return;
+        }
 
         // 构建前端重定向 URL，带上 token
         String targetUrl = String.format(
                 "/oauth-callback?accessToken=%s&user=%s",
                 loginResponse.getAccessToken(),
-                java.net.URLEncoder.encode(objectMapper.writeValueAsString(loginResponse.getUser()), StandardCharsets.UTF_8)
+                URLEncoder.encode(objectMapper.writeValueAsString(loginResponse.getUser()), StandardCharsets.UTF_8)
         );
 
         log.info("OAuth 登录成功，重定向到：{}", targetUrl);

@@ -53,4 +53,10 @@ public class Category implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT)
     private OffsetDateTime createdAt;
+
+    /**
+     * 文章数量（非数据库字段，用于展示）
+     */
+    @TableField(exist = false)
+    private Integer articleCount;
 }

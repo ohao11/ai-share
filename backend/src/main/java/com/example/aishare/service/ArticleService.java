@@ -17,6 +17,11 @@ public interface ArticleService extends IService<Article> {
     Page<ArticleResponse> getArticles(Integer page, Integer size, Long categoryId, String keyword);
 
     /**
+     * 全文搜索文章（使用 PostgreSQL FTS）
+     */
+    Page<ArticleResponse> searchArticles(Integer page, Integer size, Long categoryId, String keyword);
+
+    /**
      * 获取文章详情
      */
     ArticleResponse getArticleById(Long id);
@@ -76,4 +81,9 @@ public interface ArticleService extends IService<Article> {
      * 取消点赞文章
      */
     void unlikeArticle(Long articleId, Long userId);
+
+    /**
+     * 按标签ID查询文章
+     */
+    Page<ArticleResponse> getArticlesByTag(Integer page, Integer size, Long tagId);
 }

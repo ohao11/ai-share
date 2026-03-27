@@ -29,6 +29,10 @@
           <el-icon><ChatDotRound /></el-icon>
           <span>评论管理</span>
         </el-menu-item>
+        <el-menu-item index="tags">
+          <el-icon><PriceTag /></el-icon>
+          <span>标签管理</span>
+        </el-menu-item>
       </el-menu>
     </aside>
 
@@ -221,14 +225,65 @@
           </div>
           <el-empty description="评论管理功能开发中..." />
         </div>
+
+        <!-- 标签管理 -->
+        <div v-if="activeMenu === 'tags'" class="tags-section">
+          <div class="section-header">
+            <h3>标签管理</h3>
+            <div class="header-actions">
+              <el-button type="primary" @click="handleCreateTag">
+                <el-icon><Plus /></el-icon>
+                新建标签
+              </el-button>
+            </div>
+          </div>
+
+          <el-table :data="tags" v-loading="tagsLoading" stripe>
+            <el-table-column prop="id" label="ID" width="80" />
+            <el-table-column prop="name" label="标签名称" min-width="150" />
+            <el-table-column prop="slug" label="Slug" min-width="150" />
+            <el-table-column prop="createdAt" label="创建时间" width="180">
+              <template #default="{ row }">
+                {{ formatDate(row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" @click="handleEditTag(row)">编辑</el-button>
+                <el-button size="small" type="danger" @click="handleDeleteTag(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </div>
     </main>
+
+    <!-- 标签编辑对话框 -->
+    <el-dialog
+      v-model="tagDialogVisible"
+      :title="tagForm.id ? '编辑标签' : '新建标签'"
+      width="400px"
+    >
+      <el-form :model="tagForm" label-width="80px">
+        <el-form-item label="标签名称" required>
+          <el-input v-model="tagForm.name" placeholder="请输入标签名称" />
+        </el-form-item>
+        <el-form-item label="Slug" required>
+          <el-input v-model="tagForm.slug" placeholder="请输入 Slug" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="tagDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveTag" :loading="tagSaving">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, PriceTag } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import {
   getStatsApi,
@@ -236,9 +291,14 @@ import {
   deleteArticleApi,
   getAdminUsersApi,
   updateUserStatusApi,
-  deleteUserApi
+  deleteUserApi,
+  getTagsApi,
+  createTagApi,
+  updateTagApi,
+  deleteTagApi
 } from '@/api'
-import type { Article, User } from '@/types'
+import type { Article, User, Tag } from '@/types'
+import { formatDate } from '@/utils/format'
 
 const authStore = useAuthStore()
 
@@ -248,7 +308,8 @@ const menuName = computed(() => {
     dashboard: '数据统计',
     articles: '文章管理',
     users: '用户管理',
-    comments: '评论管理'
+    comments: '评论管理',
+    tags: '标签管理'
   }
   return names[activeMenu.value]
 })
@@ -282,12 +343,25 @@ const userPageSize = ref(10)
 const userTotal = ref(0)
 const userKeyword = ref('')
 
+// 标签管理
+const tagsLoading = ref(false)
+const tags = ref<Tag[]>([])
+const tagDialogVisible = ref(false)
+const tagSaving = ref(false)
+const tagForm = reactive({
+  id: null as number | null,
+  name: '',
+  slug: ''
+})
+
 const handleMenuSelect = (index: string) => {
   activeMenu.value = index
   if (index === 'articles') {
     loadArticles()
   } else if (index === 'users') {
     loadUsers()
+  } else if (index === 'tags') {
+    loadTags()
   }
 }
 
@@ -385,6 +459,80 @@ const handleDeleteUser = async (userId: number) => {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
     }
+  }
+}
+
+// 标签管理方法
+const loadTags = async () => {
+  tagsLoading.value = true
+  try {
+    const res = await getTagsApi()
+    tags.value = res.data
+  } catch (error) {
+    console.error('加载标签失败:', error)
+  } finally {
+    tagsLoading.value = false
+  }
+}
+
+const handleCreateTag = () => {
+  tagForm.id = null
+  tagForm.name = ''
+  tagForm.slug = ''
+  tagDialogVisible.value = true
+}
+
+const handleEditTag = (tag: Tag) => {
+  tagForm.id = tag.id
+  tagForm.name = tag.name
+  tagForm.slug = tag.slug
+  tagDialogVisible.value = true
+}
+
+const handleDeleteTag = async (tagId: number) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该标签吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteTagApi(tagId)
+    ElMessage.success('删除成功')
+    loadTags()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleSaveTag = async () => {
+  if (!tagForm.name || !tagForm.slug) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+
+  tagSaving.value = true
+  try {
+    if (tagForm.id) {
+      await updateTagApi(tagForm.id, {
+        name: tagForm.name,
+        slug: tagForm.slug
+      })
+      ElMessage.success('更新成功')
+    } else {
+      await createTagApi({
+        name: tagForm.name,
+        slug: tagForm.slug
+      })
+      ElMessage.success('创建成功')
+    }
+    tagDialogVisible.value = false
+    loadTags()
+  } catch (error) {
+    ElMessage.error('操作失败')
+  } finally {
+    tagSaving.value = false
   }
 }
 
@@ -499,7 +647,8 @@ onMounted(() => {
 
 .articles-section,
 .users-section,
-.comments-section {
+.comments-section,
+.tags-section {
   background: #fff;
   border-radius: 8px;
   padding: 1.5rem;
