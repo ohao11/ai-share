@@ -92,7 +92,7 @@ services:
 
   # Spring Boot 后端
   backend:
-    image: ai-share-backend:latest
+    image: registry.cn-shanghai.aliyuncs.com/bountyteam/ai-share-backend:latest
     container_name: ai-share-backend
     env_file:
       - .env
@@ -114,7 +114,7 @@ services:
 
   # Vue 前端
   frontend:
-    image: ai-share-frontend:latest
+    image: registry.cn-shanghai.aliyuncs.com/bountyteam/ai-share-frontend:latest
     container_name: ai-share-frontend
     environment:
       TZ: Asia/Shanghai
