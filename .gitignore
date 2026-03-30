@@ -37,6 +37,9 @@ logs/
 .env
 .env.local
 
+# SSL certificates
+ssl/
+
 # Node
 node_modules/
 dist/
