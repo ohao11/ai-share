@@ -74,6 +74,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     @Transactional(rollbackFor = Exception.class)
     public LoginResponse register(RegisterRequest request) {
+        // 校验密码复杂度
+        String password = request.getPassword();
+        if (password.length() < 8 || password.length() > 20) {
+            throw new BusinessException("密码长度必须在 8-20 之间");
+        }
+        if (!password.matches(".*[a-zA-Z].*")) {
+            throw new BusinessException("密码必须包含字母");
+        }
+        if (!password.matches(".*\\d.*")) {
+            throw new BusinessException("密码必须包含数字");
+        }
+
         // 检查邮箱是否已存在
         Long emailCount = lambdaQuery()
                 .eq(User::getEmail, request.getEmail())

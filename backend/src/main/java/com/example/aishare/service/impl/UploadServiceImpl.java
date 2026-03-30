@@ -52,10 +52,15 @@ public class UploadServiceImpl implements UploadService {
     public UploadResponse uploadFile(MultipartFile file, String folder) {
         try {
             // 获取当前用户
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("username", username);
-            User user = userMapper.selectOne(queryWrapper);
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getName())) {
+                throw new BusinessException("请先登录");
+            }
+
+            // authentication.getName() 返回的是用户 ID
+            Long userId = Long.parseLong(authentication.getName());
+            User user = userMapper.selectById(userId);
 
             if (user == null) {
                 throw new BusinessException("用户不存在");
@@ -121,10 +126,15 @@ public class UploadServiceImpl implements UploadService {
 
     @Override
     public UploadResponse confirmUpload(ConfirmUploadRequest request) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);
-        User user = userMapper.selectOne(queryWrapper);
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() ||
+            "anonymousUser".equals(authentication.getName())) {
+            throw new BusinessException("请先登录");
+        }
+
+        // authentication.getName() 返回的是用户 ID
+        Long userId = Long.parseLong(authentication.getName());
+        User user = userMapper.selectById(userId);
 
         if (user == null) {
             throw new BusinessException("用户不存在");
